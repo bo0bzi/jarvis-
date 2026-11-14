@@ -1,0 +1,783 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Jarvis · Control Dashboard</title>
+<style>
+:root{--bg:#070b14;--panel:rgba(16,26,46,.78);--panel2:rgba(22,34,58,.82);--line:rgba(130,170,255,.15);--line2:rgba(130,170,255,.28);
+--cyan:#38d9ff;--cyan2:#a6ecff;--txt:#e8f0ff;--mut:#8da2c4;--ok:#35d49a;--warn:#ffb454;--err:#ff5d6c;--info:#7aa7ff;--tool:#b58cff;
+--violet:#7c8cff;--r:16px}
+*{box-sizing:border-box}
+html{color-scheme:dark}
+body{margin:0;color:var(--txt);min-height:100vh;
+font:14px/1.5 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI Variable","Segoe UI",Inter,system-ui,sans-serif;
+background:radial-gradient(900px 520px at 50% -8%,rgba(56,217,255,.14),transparent 60%),
+radial-gradient(700px 500px at 100% 100%,rgba(124,140,255,.10),transparent 55%),var(--bg);background-attachment:fixed;
+-webkit-font-smoothing:antialiased}
+::-webkit-scrollbar{width:10px;height:10px}::-webkit-scrollbar-thumb{background:rgba(130,170,255,.2);border-radius:10px;border:2px solid transparent;background-clip:padding-box}
+header{display:flex;align-items:center;gap:18px;padding:12px 24px;border-bottom:1px solid var(--line);
+background:rgba(7,11,20,.72);position:sticky;top:0;z-index:5;backdrop-filter:blur(16px) saturate(140%)}
+.logo{font-weight:700;letter-spacing:.28em;font-size:16px;background:linear-gradient(90deg,var(--cyan),var(--violet));
+-webkit-background-clip:text;background-clip:text;color:transparent;white-space:nowrap}
+.logo small{display:block;letter-spacing:.06em;color:var(--mut);-webkit-text-fill-color:var(--mut);font-weight:400;font-size:11px}
+nav{display:flex;gap:2px;flex-wrap:wrap;margin-left:6px;padding:4px;border:1px solid var(--line);border-radius:14px;background:rgba(16,26,46,.6)}
+nav button{background:none;border:0;color:var(--mut);padding:7px 13px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:500;transition:.15s}
+nav button:hover{color:var(--txt)}
+nav button.active{color:#04121f;background:linear-gradient(135deg,var(--cyan),#6fb7ff);font-weight:650;box-shadow:0 4px 16px -4px rgba(56,217,255,.55)}
+.hdr-right{margin-left:auto;display:flex;gap:8px;align-items:center}
+.pill{display:inline-flex;align-items:center;gap:7px;padding:5px 11px;border-radius:99px;border:1px solid var(--line);font-size:12px;color:var(--mut);background:var(--panel)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--mut);display:inline-block;flex:none}
+.ok{color:var(--ok)}.warn{color:var(--warn)}.error{color:var(--err)}.info{color:var(--info)}.unknown{color:var(--mut)}
+.dot.ok{background:var(--ok);box-shadow:0 0 10px var(--ok)}.dot.warn{background:var(--warn);box-shadow:0 0 10px var(--warn)}
+.dot.error{background:var(--err);box-shadow:0 0 10px var(--err)}.dot.info{background:var(--info)}
+main{padding:24px;max-width:1440px;margin:0 auto}
+.tab{display:none}.tab.active{display:block;animation:fade .25s ease-out}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.grid{display:grid;gap:18px}
+.grid>*{min-width:0}              /* a wide table or log must scroll inside its card, never stretch the page */
+.card{min-width:0;overflow-x:auto}
+img,video,canvas,svg{max-width:100%}
+@media(max-width:1000px){table{display:block;overflow-x:auto}}
+.g2{grid-template-columns:minmax(320px,1fr) minmax(320px,1.4fr)}
+.g3{grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}
+@media(max-width:900px){.g2{grid-template-columns:1fr}}
+/* phone layout */
+@media(max-width:700px){
+  header{flex-wrap:wrap;gap:10px;padding:10px 12px;position:static}  /* a tall sticky header would eat the screen */
+  #tab-settings .row[style*="sticky"]{top:0 !important}
+  nav{order:3;width:100%;margin-left:0;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  nav::-webkit-scrollbar{display:none}
+  nav button{white-space:nowrap;padding:9px 13px;font-size:14px}
+  .hdr-right{margin-left:auto;flex-wrap:wrap}
+  main,.tab{padding-left:10px;padding-right:10px}
+  .grid,.g2,.g3{grid-template-columns:1fr !important}
+  .card{overflow-x:auto}
+  .feed{height:50vh}.log{max-width:100%}
+  table{display:block;overflow-x:auto;white-space:nowrap}
+  input,textarea,select,button{font-size:16px}
+  .btn{padding:11px 15px}
+  .field{grid-template-columns:1fr !important}.field .help,.field .ferr{grid-column:1 !important}
+}
+#chat-link{display:none;color:var(--cyan2);text-decoration:none;border:1px solid var(--line);border-radius:10px;padding:6px 12px;font-size:13px;background:var(--panel)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:18px;position:relative;
+backdrop-filter:blur(12px);box-shadow:0 10px 30px -18px rgba(0,0,0,.7)}
+.card h3{margin:0 0 14px;font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--mut);font-weight:650}
+.muted{color:var(--mut)}
+button.btn{background:rgba(124,160,255,.1);border:1px solid var(--line2);color:var(--txt);padding:8px 14px;border-radius:11px;cursor:pointer;
+font-size:13px;font-weight:550;transition:.15s}
+button.btn:hover{background:rgba(124,160,255,.2);border-color:rgba(130,170,255,.45)}
+button.btn:active{transform:scale(.97)}
+button.btn.danger{border-color:rgba(255,93,108,.45);color:#ffb3bb;background:rgba(255,93,108,.1)}
+button.btn.danger:hover{background:rgba(255,93,108,.2)}
+button.btn.good{border-color:rgba(53,212,154,.5);color:#a9f5cb;background:rgba(53,212,154,.12)}
+button.btn.good:hover{background:rgba(53,212,154,.22)}
+button.btn.on{background:linear-gradient(135deg,var(--cyan),#6fb7ff);color:#04121f;border-color:transparent}
+button:disabled{opacity:.45;cursor:default}
+input,select,textarea{background:rgba(6,12,24,.7);border:1px solid var(--line);color:var(--txt);border-radius:11px;padding:9px 12px;font:inherit;width:100%;transition:.15s}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--cyan);box-shadow:0 0 0 3px rgba(56,217,255,.15)}
+input[type=checkbox]{width:auto}
+/* status orb */
+.orb-wrap{display:flex;flex-direction:column;align-items:center;gap:12px;padding:8px 0}
+.orb{width:168px;height:168px;border-radius:50%;position:relative;display:flex;align-items:center;justify-content:center;
+--c:var(--mut);border:2px solid var(--c);box-shadow:0 0 40px -6px var(--c),inset 0 0 44px -12px var(--c);transition:all .3s}
+.orb::before{content:"";position:absolute;inset:14px;border-radius:50%;border:1px dashed var(--c);opacity:.55;animation:spin 16s linear infinite}
+.orb .core{width:var(--lv,46px);height:var(--lv,46px);min-width:46px;min-height:46px;border-radius:50%;
+background:radial-gradient(circle at 35% 30%,#fff8,var(--c) 60%);opacity:.92;box-shadow:0 0 34px var(--c);transition:width .08s,height .08s}
+.orb.pulse .core{animation:pulse 1.2s ease-in-out infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pulse{50%{transform:scale(1.16);opacity:.65}}
+.state-label{font-size:18px;letter-spacing:.22em;text-transform:uppercase;color:var(--c,var(--cyan2));font-weight:600}
+.controls{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.meter{height:6px;background:rgba(6,12,24,.8);border-radius:6px;overflow:hidden;width:100%}
+.meter>div{height:100%;width:0;background:linear-gradient(90deg,var(--ok),var(--cyan));transition:width .08s}
+/* chat feed */
+.feed{height:390px;overflow:auto;display:flex;flex-direction:column;gap:9px;padding-right:4px}
+.msg{max-width:86%;padding:10px 14px;border-radius:18px;white-space:pre-wrap;word-wrap:break-word}
+.msg.user{align-self:flex-end;background:linear-gradient(135deg,var(--cyan),#6fb7ff);color:#04121f;font-weight:500;border-bottom-right-radius:6px}
+.msg.assistant{align-self:flex-start;background:rgba(22,34,58,.9);border:1px solid var(--line);border-bottom-left-radius:6px}
+.msg .meta{display:block;font-size:11px;opacity:.65;margin-bottom:2px}
+.chatbox{display:flex;gap:8px;margin-top:12px}
+.log{height:260px;overflow:auto;font:12px/1.55 "Cascadia Code",Consolas,monospace;background:rgba(4,9,18,.75);border:1px solid var(--line);border-radius:12px;padding:10px}
+.log div{white-space:pre-wrap}
+.tr{padding:5px 0;border-bottom:1px solid rgba(130,170,255,.08)}
+.tr .k{display:inline-block;min-width:62px;text-align:center;font-size:10px;font-weight:700;border-radius:7px;padding:2px 7px;margin-right:8px;background:rgba(56,217,255,.14);color:var(--cyan)}
+.tr.thought .k{background:rgba(255,209,102,.14);color:#ffd166}.tr.tool .k{background:rgba(125,255,176,.14);color:#7dffb0}.tr.result .k{background:rgba(125,240,255,.14);color:#7df0ff}
+.tr.interrupt .k{background:rgba(255,209,102,.14);color:#ffd166}.tr.reply .k{background:rgba(122,167,255,.2);color:#b9d2ff}.tr.lessons .k{background:rgba(255,155,255,.14);color:#ff9bff}
+.tr.web .k{background:rgba(155,196,255,.14);color:#9bc4ff}.tr.escalate .k{background:rgba(255,93,108,.16);color:#ff9aa4}
+.tr details summary{cursor:pointer;list-style:none}.tr details pre{margin:4px 0 0;color:var(--mut);white-space:pre-wrap;font-size:11px}
+.lesson{padding:10px 12px;border:1px solid var(--line);border-radius:12px;margin-bottom:9px;background:rgba(6,12,24,.4)}.lesson b{color:var(--cyan2)}
+#lesson-how,#lesson-title,#lesson-when{width:100%;box-sizing:border-box;background:rgba(6,12,24,.7);color:inherit;border:1px solid var(--line);border-radius:11px;padding:9px 12px;font:inherit}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:13px}
+.kv span:nth-child(odd){color:var(--mut)}
+.agent .top{display:flex;align-items:center;gap:9px;margin-bottom:6px}
+.agent .name{font-weight:650}
+.agent .err{color:#ffb3bc;font-size:12px;margin-top:6px;white-space:pre-wrap}
+.agent .act{display:flex;gap:6px;margin-top:12px;flex-wrap:wrap}
+.check .sum{font-size:15px;margin:4px 0 8px;font-weight:550}
+.check .det{font-size:12px;color:var(--mut);word-break:break-word}
+.bar{height:8px;background:rgba(6,12,24,.8);border-radius:8px;overflow:hidden;margin:6px 0}
+.bar>div{height:100%;background:linear-gradient(90deg,var(--ok),var(--cyan))}
+table{width:100%;border-collapse:collapse}
+td,th{padding:10px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+tr:hover td{background:rgba(124,160,255,.04)}
+th{color:var(--mut);font-weight:600;font-size:11.5px;text-transform:uppercase;letter-spacing:.1em}
+.switch{position:relative;width:44px;height:24px;display:inline-block;flex:none}
+.switch input{display:none}
+.switch span{position:absolute;inset:0;background:#26344f;border-radius:24px;cursor:pointer;transition:.2s}
+.switch span::after{content:"";position:absolute;width:18px;height:18px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 4px rgba(0,0,0,.4)}
+.switch input:checked+span{background:var(--cyan)}
+.switch input:checked+span::after{transform:translateX(20px)}
+.field{display:grid;grid-template-columns:minmax(200px,320px) 1fr;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+.field .help{grid-column:2;font-size:12px;color:var(--mut);margin-top:-4px}
+.field .badge{font-size:10px;color:var(--mut);border:1px solid var(--line);border-radius:7px;padding:1px 6px;margin-left:6px}
+.field.changed label{color:var(--warn)}
+.field .ferr{grid-column:2;color:var(--err);font-size:12px}
+.row{display:flex;gap:8px;align-items:center}
+.banner{display:none;padding:13px 18px;border-radius:14px;margin-bottom:18px;border:1px solid}
+.banner.show{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.banner.confirm{background:rgba(255,180,84,.1);border-color:rgba(255,180,84,.4);color:#ffe0a8}
+.banner.problem{background:rgba(255,93,108,.1);border-color:rgba(255,93,108,.4);color:#ffc7cd}
+.banner.restart{background:rgba(56,217,255,.1);border-color:rgba(56,217,255,.35);color:#c6f2ff}
+.toast{position:fixed;bottom:22px;right:22px;background:rgba(16,26,46,.95);border:1px solid var(--cyan);color:var(--cyan2);padding:12px 18px;border-radius:14px;
+opacity:0;transition:opacity .3s;pointer-events:none;z-index:20;max-width:420px;backdrop-filter:blur(10px);box-shadow:0 12px 30px -10px rgba(0,0,0,.8)}
+.toast.show{opacity:1}
+.stat{font-size:26px;color:var(--txt);font-weight:650}
+.stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px}
+.stats>div{background:rgba(6,12,24,.55);border:1px solid var(--line);border-radius:13px;padding:12px}
+.stats small{color:var(--mut);display:block}
+.tag{font-size:11px;border-radius:7px;padding:1px 7px;border:1px solid}
+.tag.d{color:#ffb3bc;border-color:rgba(255,93,108,.45)}
+a{color:var(--cyan)}
+/* HUD (UI_THEME hud) */
+body.hud-on{background-image:radial-gradient(ellipse at 50% -10%,rgba(56,217,255,.13),transparent 60%),
+repeating-linear-gradient(0deg,rgba(56,217,255,.035) 0 1px,transparent 1px 38px),repeating-linear-gradient(90deg,rgba(56,217,255,.035) 0 1px,transparent 1px 38px)}
+.hud{margin-bottom:18px;border-color:rgba(56,217,255,.3);box-shadow:0 0 40px -22px var(--cyan),inset 0 0 60px -40px var(--cyan);overflow:hidden}
+.hud::before,.hud::after{content:"";position:absolute;width:22px;height:22px;border:2px solid var(--cyan);opacity:.7}
+.hud::before{top:8px;left:8px;border-right:0;border-bottom:0}.hud::after{bottom:8px;right:8px;border-left:0;border-top:0}
+.hud-grid{display:grid;grid-template-columns:1fr minmax(220px,300px) 1fr;gap:18px;align-items:center}
+.hud-side{display:grid;grid-template-columns:repeat(auto-fit,minmax(104px,1fr));gap:14px;justify-items:center;min-width:0}
+.hud-core{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0}
+.reactor{width:100%;max-width:230px;--c:var(--mut);overflow:visible}
+.reactor circle{fill:none;stroke:var(--c);transition:stroke .3s}
+.reactor .r3{stroke-width:1.5;stroke-dasharray:3 9;transform-origin:center;animation:spin 40s linear infinite;opacity:.6}
+.reactor .r2{stroke-width:3;stroke-dasharray:90 30 20 30;transform-origin:center;animation:spin 14s linear infinite reverse;opacity:.85}
+.reactor .r1{stroke-width:1.5;stroke-dasharray:6 6;transform-origin:center;animation:spin 22s linear infinite;opacity:.7}
+.reactor .core{fill:var(--c);stroke:none;opacity:.9;filter:drop-shadow(0 0 14px var(--c));transform-origin:center;transition:fill .3s}
+.reactor.pulse .core{animation:pulse 1.2s ease-in-out infinite}
+.hud-state{font-size:17px;letter-spacing:.3em;text-transform:uppercase;color:var(--c,var(--cyan2));font-weight:650;text-align:center}
+.hud-sub{font-size:12px;color:var(--mut);text-align:center;min-height:16px;word-break:break-word}
+.gauge{width:104px;text-align:center}.gauge svg{width:92px;height:92px;transform:rotate(-90deg)}
+.gauge .bg{fill:none;stroke:rgba(130,170,255,.14);stroke-width:7}
+.gauge .fg{fill:none;stroke:var(--cyan);stroke-width:7;stroke-linecap:round;stroke-dasharray:0 999;transition:stroke-dasharray .6s,stroke .3s;filter:drop-shadow(0 0 4px var(--cyan))}
+.gauge .fg.hot{stroke:var(--warn)}.gauge .fg.crit{stroke:var(--err)}
+.gauge .val{font-size:19px;font-weight:650;margin-top:-62px;height:34px;line-height:34px;position:relative}
+.gauge .lbl{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--mut);margin-top:28px}
+.gauge .small{font-size:11px;color:var(--cyan2);margin-top:2px;word-break:break-word}
+@media(max-width:900px){.hud-grid{grid-template-columns:1fr}.hud-core{order:-1}}
+@media(prefers-reduced-motion:reduce){.reactor circle{animation:none!important}}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">J.A.R.V.I.S.<small id="hdr-sub">control dashboard</small></div>
+  <nav id="nav">
+    <button data-tab="overview" class="active">Overview</button>
+    <button data-tab="agents">Agents</button>
+    <button data-tab="checks">Status checks</button>
+    <button data-tab="settings">Settings</button>
+    <button data-tab="tools">Tools</button>
+    <button data-tab="thinking">Thinking &amp; teaching</button>
+    <button data-tab="memory">Memory &amp; timers</button>
+    <button data-tab="shop">Shop &amp; credits</button>
+    <button data-tab="log">Event log</button>
+  </nav>
+  <div class="hdr-right">
+    <a id="chat-link" href="/">Talk &amp; chat</a>
+    <span class="pill" title="AI API"><span class="dot" id="hdr-api"></span>API</span>
+    <span class="pill" title="Abacus credits"><span class="dot" id="hdr-cred"></span><span id="hdr-cred-txt">Credits</span></span>
+    <span class="pill" title="Dashboard connection"><span class="dot" id="hdr-conn"></span><span id="hdr-conn-txt">connecting</span></span>
+  </div>
+</header>
+<main>
+  <div class="banner confirm" id="confirm-banner">
+    <b>Permission needed:</b> <span id="confirm-text"></span>
+    <span style="margin-left:auto" class="row">
+      <button class="btn good" id="confirm-yes">Approve</button><button class="btn danger" id="confirm-no">Deny</button>
+    </span>
+  </div>
+  <div class="banner problem" id="problem-banner"></div>
+  <div class="banner restart" id="restart-banner">Some changes need Jarvis to restart.
+    <button class="btn" data-action="restart_friday" style="margin-left:auto">Restart Jarvis now</button></div>
+
+  <!-- OVERVIEW -->
+  <section class="tab active" id="tab-overview">
+    <div class="card hud" id="hud">
+      <div class="hud-grid">
+        <div class="hud-side" id="hud-left"></div>
+        <div class="hud-core">
+          <svg viewBox="0 0 200 200" class="reactor" id="reactor" aria-hidden="true">
+            <circle class="r3" cx="100" cy="100" r="94"/><circle class="r2" cx="100" cy="100" r="80"/>
+            <circle class="r1" cx="100" cy="100" r="64"/><circle class="core" cx="100" cy="100" r="38"/>
+          </svg>
+          <div class="hud-state" id="hud-state">—</div>
+          <div class="hud-sub" id="hud-sub"></div>
+        </div>
+        <div class="hud-side" id="hud-right"></div>
+      </div>
+    </div>
+    <div class="card" id="limits"><h3>Limits &amp; usage</h3><div id="limits-rows" class="muted">loading…</div></div>
+    <div class="grid g2">
+      <div class="grid">
+        <div class="card">
+          <h3>Status</h3>
+          <div class="orb-wrap">
+            <div class="orb" id="orb"><div class="core"></div></div>
+            <div class="state-label" id="state-label">—</div>
+            <div class="muted" id="state-detail" style="text-align:center;min-height:20px"></div>
+            <div class="meter" title="microphone level"><div id="meter"></div></div>
+            <div class="controls">
+              <button class="btn" id="btn-mic">Mute mic</button>
+              <button class="btn" id="btn-voice">Mute voice</button>
+              <button class="btn" data-action="stop_speaking">Stop speaking</button>
+              <button class="btn" id="btn-conv">Conversation mode</button>
+            </div>
+            <div class="row" style="width:100%">
+              <span class="muted" style="white-space:nowrap">Listening mode</span>
+              <select id="mode-select">
+                <option value="always">Always listening (wake word + follow-up)</option>
+                <option value="wake">Wake word every time</option>
+                <option value="ptt">Push-to-talk</option>
+                <option value="text">Text only</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Usage</h3>
+          <div class="stats" id="usage-stats"></div>
+          <div class="muted" style="font-size:12px;margin-top:8px">Token counts come from the AI service's responses to Jarvis's own requests.</div>
+        </div>
+        <div class="card"><h3>Agents at a glance</h3><div id="agents-mini" class="kv"></div></div>
+      </div>
+      <div class="grid">
+        <div class="card">
+          <h3>Live conversation</h3>
+          <div class="feed" id="feed"></div>
+          <form class="chatbox" id="chat-form">
+            <input id="chat-input" placeholder="Type to Jarvis (replies are also spoken)..." autocomplete="off">
+            <button class="btn" type="submit">Send</button>
+          </form>
+        </div>
+        <div class="card"><h3>Recent events</h3><div class="log" id="mini-log" style="height:200px"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- AGENTS -->
+  <section class="tab" id="tab-agents"><div class="grid g3" id="agents"></div></section>
+
+  <!-- CHECKS -->
+  <section class="tab" id="tab-checks">
+    <div class="row" style="margin-bottom:14px"><button class="btn" id="run-checks">Run all checks</button>
+      <span class="muted" id="checks-time"></span></div>
+    <div class="grid g3" id="checks"></div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section class="tab" id="tab-settings">
+    <div class="row" style="margin-bottom:14px;position:sticky;top:64px;z-index:3;background:var(--bg);padding:8px 0">
+      <button class="btn good" id="save-settings">Save changes</button>
+      <button class="btn" id="reset-settings">Discard changes</button>
+      <span class="muted" id="settings-msg"></span>
+    </div>
+    <div class="grid" id="settings"></div>
+  </section>
+
+  <!-- TOOLS -->
+  <section class="tab" id="tab-tools">
+    <div class="card"><h3>PC tools Jarvis can use</h3>
+      <p class="muted" style="margin-top:0">Switch tools off to stop the AI from using them. Tools marked <span class="tag d">asks permission</span> always need your OK (voice, typing, or the Approve button).</p>
+      <table><thead><tr><th>On</th><th>Tool</th><th>Description</th><th>Calls</th><th>Last used</th></tr></thead><tbody id="tools"></tbody></table>
+    </div>
+  </section>
+
+  <!-- MEMORY -->
+  <section class="tab" id="tab-memory">
+    <div class="grid g2">
+      <div class="grid">
+        <div class="card"><h3>Long-term facts</h3>
+          <div id="facts"></div>
+          <form class="chatbox" id="fact-form"><input id="fact-input" placeholder="Add a fact (e.g. My shop opens at 9am)"><button class="btn">Add</button></form>
+        </div>
+        <div class="card"><h3>Timers &amp; reminders</h3><div id="timers"></div></div>
+        <div class="card"><h3>Notes</h3><pre id="notes" class="log" style="height:180px;margin:0"></pre></div>
+      </div>
+      <div class="card"><h3>Conversation history <button class="btn danger" id="clear-history" style="float:right;margin-top:-6px">Clear history</button></h3>
+        <div class="feed" id="history" style="height:560px"></div></div>
+    </div>
+  </section>
+
+  <!-- LOG -->
+  <section class="tab" id="tab-shop"><div class="grid g2">
+    <div class="card"><h3>Open jobs</h3><pre id="v2-jobs" class="log" style="height:220px;margin:0"></pre></div>
+    <div class="card"><h3>Cloud credits</h3><pre id="v2-credits" class="log" style="height:220px;margin:0"></pre></div>
+    <div class="card"><h3>SMS, autonomy, manuals, backups</h3><pre id="v2-status" class="log" style="height:220px;margin:0"></pre></div>
+    <div class="card"><h3>What Friday did</h3><pre id="v2-activity" class="log" style="height:220px;margin:0"></pre></div>
+  </div><div class="card"><h3>Last nightly report</h3><pre id="v2-nightly" class="log" style="height:160px;margin:0"></pre></div></section>
+  <section class="tab" id="tab-thinking"><div class="grid g2">
+    <div class="card"><h3>Live thinking <button class="btn" id="trace-clear" style="float:right;margin-top:-6px">Clear view</button></h3>
+      <div class="muted" style="margin-bottom:6px">Every step: what it heard, which lessons it follows, its reasoning, each tool it runs and what came back, and its answer. Click a step to expand.</div>
+      <div class="log" id="trace" style="height:68vh"></div></div>
+    <div class="card"><h3>Teach me how to think</h3>
+      <div class="muted" style="margin-bottom:8px">Lessons are followed in every answer. You can also say <b>teach: &lt;rule&gt;</b> in chat or by voice.</div>
+      <form id="lesson-form" style="display:flex;flex-direction:column;gap:8px">
+        <input id="lesson-title" placeholder="Short name (e.g. Check manuals first)">
+        <textarea id="lesson-how" rows="4" placeholder="How to think or what to do (e.g. For any part number or torque spec, search the manuals before answering and quote the page.)"></textarea>
+        <input id="lesson-when" placeholder="Only when the message mentions... (optional, comma separated, blank = always)">
+        <button class="btn good" type="submit">Teach it</button>
+      </form>
+      <h3 style="margin-top:16px">What it has learned</h3>
+      <div id="lessons"></div>
+      <h3 style="margin-top:16px">Learn &amp; evolve <button class="btn good" id="evolve-btn" style="float:right;margin-top:-6px">Learn from today now</button></h3>
+      <div class="muted" style="margin-bottom:6px">Every night at 02:00 (and when you press this, or say "evolve") it studies what went badly in the last 24 hours and writes itself new rules. Free: it never uses credits. Delete any rule above if you disagree.</div>
+      <pre id="evolve-report" class="log" style="height:170px;margin:0">Loading…</pre>
+    </div>
+  </div></section>
+  <section class="tab" id="tab-log"><div class="card"><h3>Event log</h3><div class="log" id="log" style="height:70vh"></div></div></section>
+</main>
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+const $ = s => document.querySelector(s);
+const STATE_COLORS = {listening:"var(--ok)",conversation:"#00e6a0",thinking:"var(--warn)",speaking:"var(--cyan)",
+  tool:"var(--tool)",error:"var(--err)",sleeping:"#4f7fa8",idle:"var(--mut)",muted:"#a03040",starting:"var(--mut)"};
+const STATE_NAMES = {sleeping:"Standing by",conversation:"Listening",listening:"Listening",thinking:"Thinking",
+  speaking:"Speaking",tool:"Working",error:"Error",idle:"Idle",muted:"Mic muted",starting:"Starting"};
+let S = null, settingsFields = [], dirty = {}, threshold = 0.02;
+
+function el(tag, attrs = {}, ...kids) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === "class") e.className = v; else if (k === "text") e.textContent = v;
+    else if (k.startsWith("on")) e.addEventListener(k.slice(2), v); else if (v !== undefined && v !== null) e.setAttribute(k, v);
+  }
+  for (const k of kids) if (k !== null && k !== undefined) e.append(k.nodeType ? k : document.createTextNode(String(k)));
+  return e;
+}
+function toast(msg) { const t = $("#toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove("show"), 3500); }
+async function loadShop() {
+  const v = await api("/api/v2"), c = v.credits;
+  $("#v2-jobs").textContent = v.jobs.map(j => `#${j.id} ${j.customer} - ${j.vehicle}: ${j.work} [${j.status}]`).join("\n") +
+    (v.parts.length ? "\n\nParts reminders:\n" + v.parts.map(p => `${p.remind_on || ""} ${p.part}`).join("\n") : "") || "No open jobs.";
+  $("#v2-credits").textContent = `Today: ${c.spent_today} of ${c.daily_cap}\nThis month: ${c.spent_month} of ${c.monthly_cap}\n\n` +
+    c.ledger.slice().reverse().map(e => `${e.time.slice(5,16)} ${e.task} est ${e.estimate[0]}-${e.estimate[1]} ${e.approved ? "approved" : "declined"} used ${e.actual || 0}`).join("\n");
+  $("#v2-status").textContent = `SMS: ${v.sms.configured ? "set up" : "not set up"}${v.sms.last_error ? " (error: " + v.sms.last_error + ")" : ""}\n` +
+    `Autonomy: ${v.autonomy.text}\nManuals: ${v.knowledge.documents} (${v.knowledge.semantic} with smart search) in ${v.knowledge.folder}\n` +
+    `Backups:\n${v.backups.join("\n") || "none yet"}`;
+  $("#v2-activity").textContent = v.activity.map(r => `${(r.time || "").slice(5,16)} [${r.kind}] ${r.message || r.msg || ""}`).join("\n");
+  $("#v2-nightly").textContent = v.nightly_report || "No nightly run yet.";
+}
+document.querySelector('[data-tab="shop"]').addEventListener("click", () => loadShop().catch(e => toast(e.message)));
+async function api(path, body) {
+  const opt = body === undefined ? {} : {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body)};
+  const r = await fetch(path, {credentials: "same-origin", ...opt});
+  if (r.status === 401) { location.reload(); throw new Error("unauthorized"); }
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) throw Object.assign(new Error(data.error || r.statusText), {data});
+  return data;
+}
+const fmtTime = iso => iso ? new Date(iso).toLocaleTimeString() : "—";
+const fmtNum = n => (n ?? 0).toLocaleString();
+function ago(iso) { if (!iso) return "never"; const s = (Date.now() - new Date(iso)) / 1000;
+  return s < 60 ? `${Math.round(s)}s ago` : s < 3600 ? `${Math.round(s / 60)}m ago` : `${Math.round(s / 3600)}h ago`; }
+
+// on the phone (Tailscale address) offer a link back to the voice/chat page on the normal https port
+if (/\.ts\.net$/.test(location.hostname)) { const a = document.getElementById("chat-link"); a.href = location.protocol + "//" + location.hostname + "/"; a.style.display = "inline-block"; }
+// ---------------------------------------------------------------- thinking trace + lessons
+function addTrace(box, e) {
+  const row = el("div", {class: "tr " + e.kind});
+  const head = [el("span", {class: "k", text: e.kind}), el("span", {class: "muted", text: fmtTime(e.time) + "  "}), e.text];
+  if (e.detail) {
+    row.append(el("details", {}, el("summary", {}, ...head), el("pre", {text: e.detail})));
+  } else head.forEach(h => row.append(h.nodeType ? h : document.createTextNode(h)));
+  const stick = box.scrollTop + box.clientHeight >= box.scrollHeight - 40;
+  box.append(row);
+  while (box.children.length > 400) box.firstChild.remove();
+  if (stick) box.scrollTop = box.scrollHeight;
+}
+function renderLessons(list) {
+  const box = $("#lessons"); box.textContent = "";
+  if (!list.length) { box.append(el("div", {class: "muted", text: "Nothing taught yet."})); return; }
+  list.forEach(l => box.append(el("div", {class: "lesson"},
+    el("b", {text: `#${l.id} ${l.title}`}), l.source === "evolve" ? el("span", {class: "muted", text: "  · learned by itself"}) : null,
+    el("div", {text: l.how}),
+    l.when ? el("div", {class: "muted", text: "applies when: " + l.when}) : null,
+    el("button", {class: "btn danger", style: "margin-top:6px", text: "Forget", onclick: async () => {
+      try { renderLessons((await api("/api/lessons", {delete: String(l.id)})).lessons); } catch (e) { toast(e.message); }
+    }}))));
+}
+async function loadLessons() { renderLessons((await api("/api/lessons")).lessons); loadEvolve().catch(() => {}); }
+async function loadEvolve() {
+  const r = await api("/api/evolve");
+  $("#evolve-report").textContent = (r.running ? "Studying the last 24 hours… (this takes up to a minute)\n\n" : "") + r.report;
+  $("#evolve-btn").disabled = !!r.running;
+  return r.running;
+}
+$("#evolve-btn").onclick = async () => {
+  try {
+    await api("/api/evolve", {}); toast("Studying the last 24 hours…");
+    const poll = async () => { const running = await loadEvolve(); if (running) setTimeout(poll, 3000); else loadLessons(); };
+    setTimeout(poll, 1500);
+  } catch (e) { toast("Failed: " + e.message); }
+};
+$("#lesson-form").addEventListener("submit", async ev => {
+  ev.preventDefault();
+  const how = $("#lesson-how").value.trim(); if (!how) return toast("Write how it should think first.");
+  try {
+    const r = await api("/api/lessons", {title: $("#lesson-title").value, how, when: $("#lesson-when").value});
+    ["#lesson-title", "#lesson-how", "#lesson-when"].forEach(s => $(s).value = "");
+    renderLessons(r.lessons); toast("Learned. It will follow that from now on.");
+  } catch (e) { toast("Failed: " + e.message); }
+});
+$("#trace-clear").onclick = () => { $("#trace").textContent = ""; };
+document.querySelector('[data-tab="thinking"]').addEventListener("click", () => loadLessons().catch(e => toast(e.message)));
+
+// ---------------------------------------------------------------- tabs
+document.querySelectorAll("#nav button").forEach(b => b.onclick = () => {
+  document.querySelectorAll("#nav button").forEach(x => x.classList.toggle("active", x === b));
+  document.querySelectorAll(".tab").forEach(t => t.classList.toggle("active", t.id === "tab-" + b.dataset.tab));
+  const t = b.dataset.tab;
+  if (t === "settings" && !Object.keys(dirty).length) loadSettings();
+  if (t === "tools") loadTools();
+  if (t === "memory") loadMemory();
+});
+document.addEventListener("click", async e => {
+  const a = e.target.closest("[data-action]"); if (!a) return;
+  if (a.dataset.action === "restart_friday" && !confirm("Restart Jarvis now?")) return;
+  try { const r = await api("/api/control", {action: a.dataset.action}); toast(r.message); }
+  catch (err) { toast("Failed: " + err.message); }
+  if (a.dataset.action === "restart_friday") setTimeout(waitForRestart, 2500);
+});
+function waitForRestart() { fetch("/api/health").then(r => r.ok ? location.reload() : setTimeout(waitForRestart, 1500)).catch(() => setTimeout(waitForRestart, 1500)); }
+
+// ---------------------------------------------------------------- render: status
+function renderStatus() {
+  const st = S.status.state, c = STATE_COLORS[st] || "var(--mut)";
+  const orb = $("#orb"); orb.style.setProperty("--c", c);
+  orb.classList.toggle("pulse", ["thinking", "speaking", "tool"].includes(st));
+  $("#state-label").textContent = STATE_NAMES[st] || st; $("#state-label").style.setProperty("--c", c);
+  $("#state-detail").textContent = S.status.detail || "";
+  const f = S.flags, A = S.assistant;
+  $("#btn-mic").textContent = f.mic_muted ? "Unmute mic" : "Mute mic"; $("#btn-mic").classList.toggle("on", !!f.mic_muted);
+  $("#btn-voice").textContent = f.voice_muted || A.voice_muted ? "Unmute voice" : "Mute voice";
+  $("#btn-conv").classList.toggle("on", !!A.conversation_mode);
+  $("#btn-conv").textContent = A.conversation_mode ? "Conversation mode: ON" : "Conversation mode: off";
+  $("#mode-select").value = A.mode;
+  $("#hdr-sub").textContent = `${A.name} v${A.version} · ${A.provider} / ${A.model}`;
+  const pb = $("#problem-banner"); pb.classList.toggle("show", A.problems.length > 0);
+  pb.textContent = A.problems.length ? "Setup needed: " + A.problems.join(" ") + " → open Settings." : "";
+  const rc = $("#reactor"); rc.style.setProperty("--c", c); rc.classList.toggle("pulse", ["thinking", "speaking", "tool"].includes(st));
+  $("#hud-state").textContent = STATE_NAMES[st] || st; $("#hud-state").style.setProperty("--c", c);
+  $("#hud-sub").textContent = S.status.detail || "";
+}
+
+// ---------------------------------------------------------------- HUD gauges
+const SVGNS = "http://www.w3.org/2000/svg", CIRC = 2 * Math.PI * 38;
+function gauge(label, pct, text, small) {
+  const mk = (n, a) => { const e = document.createElementNS(SVGNS, n); for (const k in a) e.setAttribute(k, a[k]); return e; };
+  const svg = mk("svg", {viewBox: "0 0 100 100"});
+  svg.append(mk("circle", {class: "bg", cx: 50, cy: 50, r: 38}));
+  const known = typeof pct === "number", p = known ? Math.max(0, Math.min(100, pct)) : 0;
+  const fg = mk("circle", {class: "fg" + (p >= 90 ? " crit" : p >= 75 ? " hot" : ""), cx: 50, cy: 50, r: 38});
+  fg.style.strokeDasharray = `${CIRC * p / 100} 999`; svg.append(fg);
+  return el("div", {class: "gauge"}, svg, el("div", {class: "val", text: text ?? (known ? p + "%" : "–")}),
+    el("div", {class: "lbl", text: label}), small ? el("div", {class: "small", text: small}) : null);
+}
+async function renderHud() {
+  if (document.hidden) return;
+  try {
+    const h = await api("/api/hud"), cl = h.claude;
+    const modeName = {auto: "Auto", local: "Local", online: "Online"}[h.brain_mode] || h.brain_mode;
+    const route = String(h.route || "main").replace(/^main$/, "local AI");
+    $("#hud-left").replaceChildren(gauge("CPU", h.cpu), gauge("Memory", h.ram), gauge("GPU", h.gpu, null, h.vram != null ? `VRAM ${h.vram}%` : "no GPU data"));
+    $("#hud-right").replaceChildren(
+      gauge("Brain", 100, modeName, route.slice(0, 28)),
+      gauge("Claude today", cl.cap ? 100 * cl.used / cl.cap : 0, cl.on ? `${cl.used}/${cl.cap}` : "off", cl.on ? "calls used" : "no API key"),
+      gauge("Next up", h.next_event ? 100 : 0, h.next_event ? "●" : "–", h.next_event || `${h.timers} timer${h.timers === 1 ? "" : "s"} running`));
+  } catch (e) { /* the HUD is decoration: never break the page */ }
+}
+async function renderLimits() {
+  if (document.hidden) return;
+  try {
+    const d = await api("/api/limits");
+    $("#limits-rows").replaceChildren(...d.rows.map(r => {
+      const pct = r.cap ? Math.min(100, 100 * r.used / r.cap) : 0, col = pct >= 90 ? "#e5484d" : pct >= 75 ? "#f5a524" : "#2fb170";
+      const bar = el("div", {style: "height:8px;border-radius:4px;background:rgba(127,127,127,.25);overflow:hidden;margin:4px 0"},
+        el("div", {style: `height:100%;width:${pct}%;background:${col}`}));
+      return el("div", {style: "margin:10px 0"},
+        el("div", {style: "display:flex;justify-content:space-between"}, el("b", {text: r.name}),
+          el("span", {text: r.cap ? `${r.used} / ${r.cap}` : "–"})),
+        bar, el("div", {class: "muted", text: r.note}));
+    }));
+  } catch (e) { /* decoration: never break the page */ }
+}
+renderLimits(); setInterval(renderLimits, 10000);
+document.body.classList.add("hud-on");
+renderHud(); setInterval(renderHud, 4000);
+function renderConfirm(p) {
+  $("#confirm-banner").classList.toggle("show", !!p);
+  if (p) { $("#confirm-text").textContent = p.prompt; $("#confirm-banner").dataset.id = p.id; }
+}
+function addMsg(container, m) {
+  const d = el("div", {class: "msg " + m.role},
+    el("span", {class: "meta", text: (m.role === "user" ? "You" : (S?.assistant.name || "Friday")) + (m.via ? " · " + m.via : "") + " · " + fmtTime(m.time)}),
+    m.text ?? m.content);
+  container.append(d); container.scrollTop = container.scrollHeight;
+}
+function addLog(container, e, max = 400) {
+  const cls = e.level === "error" ? "error" : e.level === "warn" ? "warn" : "";
+  container.append(el("div", {class: cls}, `${fmtTime(e.time)}  [${e.source}] ${e.message}`));
+  while (container.children.length > max) container.firstChild.remove();
+  container.scrollTop = container.scrollHeight;
+}
+function renderUsage() {
+  const u = S.usage, box = $("#usage-stats"); box.textContent = "";
+  const items = [["Requests today", fmtNum(u.today.requests)], ["Tokens today", fmtNum(u.today.input_tokens + u.today.output_tokens)],
+    ["Tokens this month", fmtNum(u.month.input_tokens + u.month.output_tokens)], ["Session requests", fmtNum(u.session.requests)],
+    ["Errors today", fmtNum(u.today.errors)], ["Last AI latency", u.session.last_latency_ms != null ? u.session.last_latency_ms + " ms" : "—"]];
+  const cr = (S.checks || []).find(c => c.id === "credits");
+  if (cr && cr.details.credits_left != null) items.unshift(["Abacus credits left", fmtNum(Math.round(cr.details.credits_left))]);
+  for (const [k, v] of items) box.append(el("div", {}, el("small", {text: k}), el("div", {class: "stat", text: v})));
+}
+
+// ---------------------------------------------------------------- agents
+const AGENT_ACTIONS = {voice_input: [["Restart mic", "restart_audio"]], stt: [["Reload", "restart_audio"]],
+  brain: [["Reconnect", "restart_brain"]], tts: [["Stop speaking", "stop_speaking"]],
+  listener: [["Mute / unmute mic", "toggle_mic"]]};
+function renderAgents() {
+  const box = $("#agents"), mini = $("#agents-mini"); box.textContent = ""; mini.textContent = "";
+  for (const a of S.agents) {
+    const card = el("div", {class: "card agent"},
+      el("div", {class: "top"}, el("span", {class: "dot " + a.health}), el("span", {class: "name", text: a.name}),
+        el("span", {class: "muted " + a.health, style: "margin-left:auto;font-size:12px", text: a.health.toUpperCase()})),
+      el("div", {class: "muted", text: a.detail || ""}),
+      el("div", {class: "muted", style: "font-size:12px;margin-top:4px", text: "Last activity: " + ago(a.last_activity)}),
+      a.error ? el("div", {class: "err", text: a.error}) : null);
+    const acts = AGENT_ACTIONS[a.id];
+    if (acts) card.append(el("div", {class: "act"}, ...acts.map(([l, act]) => el("button", {class: "btn", "data-action": act, text: l}))));
+    box.append(card);
+    mini.append(el("span", {}, el("span", {class: "dot " + a.health}), " " + a.name), el("span", {class: "muted", text: a.detail || a.health}));
+  }
+}
+
+// ---------------------------------------------------------------- checks
+function renderChecks() {
+  const box = $("#checks"); box.textContent = "";
+  const list = S.checks || [];
+  if (!list.length) box.append(el("div", {class: "muted", text: "No checks yet - click Run all checks."}));
+  let newest = "";
+  for (const c of list) {
+    if (c.checked_at > newest) newest = c.checked_at;
+    const det = el("div", {class: "det"});
+    for (const [k, v] of Object.entries(c.details || {})) {
+      if (k === "packages") { det.append(el("div", {text: "packages: " + Object.entries(v).map(([p, ver]) => p + " " + ver).join(", ")})); continue; }
+      if (typeof v === "string" && v.startsWith("http")) { det.append(el("div", {}, k.replace(/_/g, " ") + ": ", el("a", {href: v, target: "_blank", rel: "noopener", text: v}))); continue; }
+      det.append(el("div", {text: `${k.replace(/_/g, " ")}: ${Array.isArray(v) ? v.join(", ") || "none" : typeof v === "number" ? v.toLocaleString() : v}`}));
+    }
+    const card = el("div", {class: "card check"},
+      el("div", {class: "row"}, el("span", {class: "dot " + c.status}), el("b", {text: c.name}),
+        el("button", {class: "btn", style: "margin-left:auto;padding:3px 9px", text: "Re-check", onclick: () => runChecks(c.id)})),
+      el("div", {class: "sum " + c.status, text: c.summary}));
+    if (c.id === "credits" && c.details.percent_left != null) {
+      const p = c.details.percent_left;
+      card.append(el("div", {class: "bar"}, el("div", {style: `width:${p}%;background:${p > 25 ? "var(--ok)" : p > 5 ? "var(--warn)" : "var(--err)"}`})));
+    }
+    card.append(det, el("div", {class: "muted", style: "font-size:11px;margin-top:6px",
+      text: `checked ${fmtTime(c.checked_at)}${c.latency_ms != null ? " · " + c.latency_ms + " ms" : ""}`}));
+    box.append(card);
+  }
+  $("#checks-time").textContent = newest ? "Last run " + fmtTime(newest) : "";
+  const api_ = list.find(c => c.id === "api"), cr = list.find(c => c.id === "credits");
+  $("#hdr-api").className = "dot " + (api_ ? api_.status : "");
+  $("#hdr-cred").className = "dot " + (cr ? cr.status : "");
+  $("#hdr-cred-txt").textContent = cr && cr.details.credits_left != null ? fmtNum(Math.round(cr.details.credits_left)) + " credits" : "Credits";
+}
+async function runChecks(id) {
+  $("#run-checks").disabled = true; toast(id ? "Re-checking " + id + "..." : "Running all checks...");
+  try { const r = await api("/api/checks/run", id ? {id} : {}); mergeChecks(r.results); }
+  catch (e) { toast("Checks failed: " + e.message); }
+  $("#run-checks").disabled = false;
+}
+function mergeChecks(results) {
+  const map = Object.fromEntries((S.checks || []).map(c => [c.id, c]));
+  for (const r of results) map[r.id] = r;
+  S.checks = Object.values(map); renderChecks(); renderUsage();
+}
+$("#run-checks").onclick = () => runChecks();
+
+// ---------------------------------------------------------------- settings
+async function loadSettings() {
+  const [s, mics] = await Promise.all([api("/api/settings"), api("/api/mics").catch(() => ({devices: []}))]);
+  settingsFields = s.fields; dirty = {}; renderSettings(mics); $("#settings-msg").textContent = "";
+}
+function renderSettings(mics) {
+  const box = $("#settings"); box.textContent = "";
+  const groups = {};
+  for (const f of settingsFields) (groups[f.group] ||= []).push(f);
+  for (const [g, fields] of Object.entries(groups)) {
+    const card = el("div", {class: "card"}, el("h3", {text: g}));
+    for (const f of fields) card.append(renderField(f, mics));
+    if (g === "Microphone & speech") card.append(el("div", {class: "row", style: "margin-top:10px"},
+      el("button", {class: "btn", text: "Calibrate microphone (stay quiet)", onclick: calibrate}), el("span", {class: "muted", id: "calib-msg"})));
+    if (g === "Voice") card.append(el("div", {class: "row", style: "margin-top:10px"},
+      el("button", {class: "btn", text: "Test voice", onclick: () => api("/api/test-voice", {voice: valueOf("EDGE_VOICE"), engine: valueOf("TTS_ENGINE")}).then(() => toast("Playing a test sentence on the PC speakers"))})));
+    box.append(card);
+  }
+}
+function valueOf(key) { return key in dirty ? dirty[key] : (settingsFields.find(f => f.key === key) || {}).value; }
+function renderField(f, mics) {
+  const wrap = el("div", {class: "field", id: "f-" + f.key});
+  const label = el("label", {text: f.label}, f.apply === "restart" ? el("span", {class: "badge", text: "restart"}) : null);
+  let input;
+  const mark = v => { if (String(v) === String(f.value) && f.type !== "secret") delete dirty[f.key]; else dirty[f.key] = v;
+    wrap.classList.toggle("changed", f.key in dirty); $("#settings-msg").textContent = Object.keys(dirty).length ? Object.keys(dirty).length + " unsaved change(s)" : ""; };
+  if (f.type === "bool") {
+    const cb = el("input", {type: "checkbox"}); cb.checked = String(f.value).toLowerCase() === "true";
+    cb.onchange = () => mark(cb.checked ? "true" : "false");
+    input = el("label", {class: "switch"}, cb, el("span"));
+  } else if (f.type === "select" || f.type === "mic") {
+    input = el("select");
+    let opts = f.type === "mic" ? [["", "Windows default microphone"], ...(mics.devices || []).map(d => [String(d.index), `[${d.index}] ${d.name}${d.default ? " (default)" : ""}`])]
+                                : f.options.map(o => [o, o]);
+    if (f.value && !opts.some(o => o[0] === String(f.value))) opts.push([f.value, f.value + " (current)"]);
+    for (const [v, t] of opts) input.append(el("option", {value: v, text: t}));
+    input.value = f.value ?? ""; input.onchange = () => mark(input.value);
+  } else if (f.type === "secret") {
+    input = el("div", {class: "row"});
+    const inp = el("input", {type: "password", placeholder: f.has_value ? `saved (${f.value}) - type to replace` : "not set - paste your key", autocomplete: "off"});
+    const show = el("button", {class: "btn", type: "button", text: "Show", onclick: () => { inp.type = inp.type === "password" ? "text" : "password"; show.textContent = inp.type === "password" ? "Show" : "Hide"; }});
+    inp.oninput = () => { if (inp.value.trim()) mark(inp.value.trim()); else { delete dirty[f.key]; wrap.classList.remove("changed"); } };
+    input.append(inp, show);
+  } else {
+    input = el("input", {type: f.type === "number" ? "number" : "text", value: f.value ?? ""});
+    if (f.type === "number") { if (f.min != null) input.min = f.min; if (f.max != null) input.max = f.max; input.step = f.step || "any"; }
+    input.oninput = () => mark(input.value);
+  }
+  wrap.append(label, input);
+  if (f.help) wrap.append(el("div", {class: "help", text: f.help}));
+  return wrap;
+}
+async function calibrate() {
+  $("#calib-msg").textContent = "Listening to room noise...";
+  try { const r = await api("/api/calibrate", {});
+    $("#calib-msg").textContent = r.ok ? `Noise ${r.ambient} → suggested threshold ${r.suggested_threshold} (0 = automatic)` : r.error; }
+  catch (e) { $("#calib-msg").textContent = e.message; }
+}
+$("#save-settings").onclick = async () => {
+  if (!Object.keys(dirty).length) { toast("Nothing to save"); return; }
+  document.querySelectorAll(".ferr").forEach(e => e.remove());
+  try {
+    const r = await api("/api/settings", {updates: dirty});
+    toast(`Saved ${r.changed.length} setting(s).` + (r.notes && r.notes.length ? " " + r.notes.join(" ") : ""));
+    if (r.restart_needed) $("#restart-banner").classList.add("show");
+    await loadSettings(); refreshState();
+  } catch (e) {
+    const fields = e.data && e.data.fields;
+    if (fields) for (const [k, msg] of Object.entries(fields)) { const w = $("#f-" + k); if (w) w.append(el("div", {class: "ferr", text: msg})); }
+    toast("Not saved: " + e.message);
+  }
+};
+$("#reset-settings").onclick = () => loadSettings();
+
+// ---------------------------------------------------------------- tools
+async function loadTools() {
+  const {tools} = await api("/api/tools"), tb = $("#tools"); tb.textContent = "";
+  for (const t of tools) {
+    const cb = el("input", {type: "checkbox"}); cb.checked = t.enabled;
+    cb.onchange = async () => { try { await api("/api/tools", {name: t.name, enabled: cb.checked}); toast(`${t.name} ${cb.checked ? "enabled" : "disabled"}`); } catch (e) { cb.checked = !cb.checked; toast(e.message); } };
+    tb.append(el("tr", {},
+      el("td", {}, el("label", {class: "switch"}, cb, el("span"))),
+      el("td", {}, el("b", {text: t.name}), t.dangerous ? el("div", {}, el("span", {class: "tag d", text: "asks permission"})) : null),
+      el("td", {class: "muted", text: t.description}),
+      el("td", {text: `${t.calls || 0}${t.errors ? " (" + t.errors + " err)" : ""}`}),
+      el("td", {class: "muted", text: t.last_used ? ago(t.last_used) : "never", title: t.last_result || ""})));
+  }
+}
+
+// ---------------------------------------------------------------- memory
+async function loadMemory() {
+  const [m, n] = await Promise.all([api("/api/memory"), api("/api/notes").catch(() => ({notes: ""}))]);
+  const facts = $("#facts"); facts.textContent = "";
+  if (!m.facts.length) facts.append(el("div", {class: "muted", text: "No facts stored yet."}));
+  for (const f of m.facts) facts.append(el("div", {class: "row", style: "padding:6px 0;border-bottom:1px dashed #12273d"},
+    el("span", {style: "flex:1", text: f}),
+    el("button", {class: "btn danger", style: "padding:3px 9px", text: "Delete", onclick: async () => { await api("/api/memory/fact", {fact: f, delete: true}); loadMemory(); }})));
+  const h = $("#history"); h.textContent = "";
+  if (!m.messages.length) h.append(el("div", {class: "muted", text: "History is empty."}));
+  for (const msg of m.messages) addMsg(h, msg);
+  $("#notes").textContent = n.notes || "No notes yet.";
+  renderTimers();
+}
+function renderTimers() {
+  const box = $("#timers"); box.textContent = "";
+  if (!S.timers.length) box.append(el("div", {class: "muted", text: "No active timers or reminders."}));
+  for (const t of S.timers) box.append(el("div", {class: "row", style: "padding:6px 0"},
+    el("span", {style: "flex:1", text: `${t.message} — ${new Date(t.due).toLocaleString()}`}),
+    el("button", {class: "btn danger", style: "padding:3px 9px", text: "Cancel", onclick: async () => { await api("/api/timers/cancel", {id: t.id}); refreshState(); }})));
+}
+$("#fact-form").onsubmit = async e => { e.preventDefault(); const v = $("#fact-input").value.trim(); if (!v) return;
+  await api("/api/memory/fact", {fact: v}); $("#fact-input").value = ""; loadMemory(); };
+$("#clear-history").onclick = async () => { if (!confirm("Clear the conversation history? (Facts are kept.)")) return;
+  await api("/api/memory/clear", {}); loadMemory(); };
+
+// ---------------------------------------------------------------- controls
+$("#btn-mic").onclick = () => api("/api/control", {action: S.flags.mic_muted ? "unmute_mic" : "mute_mic"}).then(r => toast(r.message));
+$("#btn-voice").onclick = () => api("/api/control", {action: (S.flags.voice_muted || S.assistant.voice_muted) ? "unmute_voice" : "mute_voice"}).then(r => { toast(r.message); refreshState(); });
+$("#btn-conv").onclick = () => api("/api/control", {action: S.assistant.conversation_mode ? "conversation_off" : "conversation_on"}).then(r => { toast(r.message); refreshState(); });
+$("#mode-select").onchange = e => api("/api/control", {action: "mode:" + e.target.value}).then(r => { toast(r.message); refreshState(); });
+$("#chat-form").onsubmit = async e => { e.preventDefault(); const v = $("#chat-input").value.trim(); if (!v) return;
+  $("#chat-input").value = ""; try { await api("/api/chat", {text: v}); } catch (err) { toast(err.message); } };
+$("#confirm-yes").onclick = () => api("/api/confirm", {id: $("#confirm-banner").dataset.id, approve: true}).catch(() => {});
+$("#confirm-no").onclick = () => api("/api/confirm", {id: $("#confirm-banner").dataset.id, approve: false}).catch(() => {});
+
+// ---------------------------------------------------------------- data flow
+async function refreshState() {
+  S = await api("/api/state");
+  renderStatus(); renderAgents(); renderChecks(); renderUsage(); renderConfirm(S.pending_confirm);
+  if ($("#tab-memory").classList.contains("active")) renderTimers();
+}
+async function init() {
+  await refreshState();
+  const feed = $("#feed"), log = $("#log"), mini = $("#mini-log");
+  feed.textContent = ""; log.textContent = ""; mini.textContent = "";
+  (S.trace || []).forEach(t => addTrace($("#trace"), t));
+  S.feed.forEach(m => addMsg(feed, m)); S.log.forEach(e => { addLog(log, e); addLog(mini, e, 60); });
+  connect();
+  setInterval(() => refreshState().catch(() => {}), 15000);
+}
+function connect() {
+  const es = new EventSource("/api/events");
+  es.onopen = () => { $("#hdr-conn").className = "dot ok"; $("#hdr-conn-txt").textContent = "live"; };
+  es.onerror = () => { $("#hdr-conn").className = "dot error"; $("#hdr-conn-txt").textContent = "offline"; };
+  es.onmessage = ev => {
+    const e = JSON.parse(ev.data);
+    switch (e.type) {
+      case "status": S.status = e; renderStatus(); break;
+      case "flags": S.flags = {...S.flags, ...e}; renderStatus(); break;
+      case "level": { const pct = Math.min(100, Math.sqrt(e.rms / 0.12) * 100); $("#meter").style.width = pct + "%";
+        $("#orb").style.setProperty("--lv", (46 + Math.min(70, e.rms * 900)) + "px"); break; }
+      case "chat": addMsg($("#feed"), e); break;
+      case "trace": addTrace($("#trace"), e); break;
+      case "log": addLog($("#log"), e); addLog($("#mini-log"), e, 60); break;
+      case "agent": { const i = S.agents.findIndex(a => a.id === e.id); if (i >= 0) S.agents[i] = e; else S.agents.push(e); renderAgents(); break; }
+      case "checks": S.checks = e.results; renderChecks(); renderUsage(); break;
+      case "confirm": renderConfirm(e.pending); break;
+    }
+  };
+}
+init().catch(e => toast("Dashboard failed to load: " + e.message));
+</script>
+</body>
+</html>

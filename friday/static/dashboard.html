@@ -1,0 +1,1001 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Jarvis · Control Dashboard</title>
+<style>
+:root{--bg:#070b14;--panel:rgba(16,26,46,.78);--deep:rgba(6,12,24,.6);--line:rgba(130,170,255,.15);--line2:rgba(130,170,255,.28);
+--cyan:#38d9ff;--cyan2:#a6ecff;--txt:#e8f0ff;--mut:#8da2c4;--ok:#35d49a;--warn:#ffb454;--err:#ff5d6c;--info:#7aa7ff;--tool:#b58cff;
+--violet:#7c8cff;--r:16px}
+*{box-sizing:border-box}
+html{color-scheme:dark}
+body{margin:0;color:var(--txt);min-height:100vh;
+font:14px/1.5 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI Variable","Segoe UI",Inter,system-ui,sans-serif;
+background:radial-gradient(ellipse at 50% -10%,rgba(56,217,255,.13),transparent 60%),
+repeating-linear-gradient(0deg,rgba(56,217,255,.03) 0 1px,transparent 1px 38px),repeating-linear-gradient(90deg,rgba(56,217,255,.03) 0 1px,transparent 1px 38px),var(--bg);
+background-attachment:fixed;-webkit-font-smoothing:antialiased}
+::-webkit-scrollbar{width:10px;height:10px}::-webkit-scrollbar-thumb{background:rgba(130,170,255,.2);border-radius:10px;border:2px solid transparent;background-clip:padding-box}
+.ic{width:1.2em;height:1.2em;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;flex:none;vertical-align:-.2em}
+header{display:flex;align-items:center;gap:18px;padding:12px 24px;border-bottom:1px solid var(--line);
+background:rgba(7,11,20,.78);position:sticky;top:0;z-index:5;backdrop-filter:blur(16px) saturate(140%)}
+.logo{font-weight:700;letter-spacing:.28em;font-size:16px;background:linear-gradient(90deg,var(--cyan),var(--violet));
+-webkit-background-clip:text;background-clip:text;color:transparent;white-space:nowrap}
+.logo small{display:block;letter-spacing:.06em;color:var(--mut);-webkit-text-fill-color:var(--mut);font-weight:400;font-size:11px}
+nav{display:flex;gap:2px;margin-left:6px;padding:4px;border:1px solid var(--line);border-radius:14px;background:rgba(16,26,46,.6)}
+nav button,.sub button{background:none;border:0;color:var(--mut);padding:8px 14px;border-radius:10px;cursor:pointer;font:inherit;font-size:13px;font-weight:550;
+transition:.15s;display:flex;align-items:center;gap:7px;white-space:nowrap;position:relative}
+nav button:hover,.sub button:hover{color:var(--txt)}
+nav button.active,.sub button.active,.seg button.on{color:#04121f;background:linear-gradient(135deg,var(--cyan),#6fb7ff);font-weight:700;box-shadow:0 4px 16px -4px rgba(56,217,255,.55)}
+.flag{width:8px;height:8px;border-radius:50%;background:var(--err);box-shadow:0 0 8px var(--err);display:none}
+.flag.show{display:inline-block}
+.hdr-right{margin-left:auto;display:flex;gap:8px;align-items:center}
+.pill{display:inline-flex;align-items:center;gap:7px;padding:5px 11px;border-radius:99px;border:1px solid var(--line);font-size:12px;color:var(--mut);background:var(--panel);white-space:nowrap}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--mut);display:inline-block;flex:none}
+.ok{color:var(--ok)}.warn{color:var(--warn)}.error{color:var(--err)}.info{color:var(--info)}.unknown{color:var(--mut)}
+.dot.ok{background:var(--ok);box-shadow:0 0 10px var(--ok)}.dot.warn{background:var(--warn);box-shadow:0 0 10px var(--warn)}
+.dot.error{background:var(--err);box-shadow:0 0 10px var(--err)}.dot.info{background:var(--info)}
+main{padding:22px 24px;max-width:1440px;margin:0 auto}
+.tab,.pane{display:none}.tab.active,.pane.active{display:block;animation:fade .22s ease-out}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.grid{display:grid;gap:18px}.grid>*{min-width:0}
+.g2{grid-template-columns:minmax(320px,1fr) minmax(320px,1.5fr)}
+.g2e{grid-template-columns:1fr 1fr}
+.g3{grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:18px;position:relative;min-width:0;
+backdrop-filter:blur(12px);box-shadow:0 10px 30px -18px rgba(0,0,0,.7)}
+.card h3{margin:0 0 14px;font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--mut);font-weight:650;display:flex;align-items:center;gap:10px}
+.card h3 .right{margin-left:auto;text-transform:none;letter-spacing:0}
+.muted{color:var(--mut)}.small{font-size:12px}
+button.btn{background:rgba(124,160,255,.1);border:1px solid var(--line2);color:var(--txt);padding:8px 14px;border-radius:11px;cursor:pointer;
+font:inherit;font-size:13px;font-weight:550;transition:.15s;display:inline-flex;align-items:center;gap:7px;white-space:nowrap}
+button.btn:hover{background:rgba(124,160,255,.2);border-color:rgba(130,170,255,.45)}
+button.btn:active{transform:scale(.97)}
+button.btn.sm{padding:3px 10px;font-size:12px}
+button.btn.danger{border-color:rgba(255,93,108,.45);color:#ffb3bb;background:rgba(255,93,108,.1)}
+button.btn.danger:hover{background:rgba(255,93,108,.2)}
+button.btn.good{border-color:rgba(53,212,154,.5);color:#a9f5cb;background:rgba(53,212,154,.12)}
+button.btn.good:hover{background:rgba(53,212,154,.22)}
+button.btn.on{background:linear-gradient(135deg,var(--cyan),#6fb7ff);color:#04121f;border-color:transparent}
+button:disabled{opacity:.45;cursor:default}
+input,select,textarea{background:rgba(6,12,24,.7);border:1px solid var(--line);color:var(--txt);border-radius:11px;padding:9px 12px;font:inherit;width:100%;transition:.15s}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--cyan);box-shadow:0 0 0 3px rgba(56,217,255,.15)}
+input[type=checkbox]{width:auto}
+.row{display:flex;gap:8px;align-items:center}
+.seg{display:inline-flex;gap:3px;padding:3px;border:1px solid var(--line);border-radius:12px;background:var(--deep)}
+.seg button{border:0;background:none;color:var(--mut);padding:6px 12px;border-radius:9px;font:inherit;font-size:12.5px;font-weight:550;cursor:pointer}
+/* banners */
+.banner{display:none;padding:13px 18px;border-radius:14px;margin-bottom:18px;border:1px solid}
+.banner.show{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.banner.confirm{background:rgba(255,180,84,.1);border-color:rgba(255,180,84,.4);color:#ffe0a8}
+.banner.confirm small{display:block;color:var(--mut)}
+.banner.problem{background:rgba(255,93,108,.1);border-color:rgba(255,93,108,.4);color:#ffc7cd}
+.banner.restart{background:rgba(56,217,255,.1);border-color:rgba(56,217,255,.35);color:#c6f2ff}
+.toast{position:fixed;bottom:22px;right:22px;background:rgba(16,26,46,.95);border:1px solid var(--cyan);color:var(--cyan2);padding:12px 18px;border-radius:14px;
+opacity:0;transition:opacity .3s;pointer-events:none;z-index:20;max-width:420px;backdrop-filter:blur(10px);box-shadow:0 12px 30px -10px rgba(0,0,0,.8)}
+.toast.show{opacity:1}
+/* home: route strip */
+.route{display:grid;grid-template-columns:1fr auto 1fr auto 1fr auto 1fr;gap:10px;align-items:stretch}
+.node{border:1px solid var(--line);border-radius:14px;padding:12px 14px;background:var(--deep);transition:.3s;min-width:0}
+.node b{display:block;font-size:14px}.node span{display:block;color:var(--mut);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.node .bar{margin:8px 0 0}
+.node.live{border-color:var(--cyan);box-shadow:0 0 24px -8px var(--cyan),inset 0 0 30px -18px var(--cyan)}
+.node.live b{color:var(--cyan2)}
+.node.off{opacity:.5}
+.arrow{align-self:center;color:var(--mut)}
+.routefoot{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-top:14px}
+.routefoot .meter{flex:1;min-width:240px}
+/* home: core */
+.core-card{display:flex;flex-direction:column;align-items:center;gap:10px;border-color:rgba(56,217,255,.3);box-shadow:0 0 40px -22px var(--cyan),inset 0 0 60px -40px var(--cyan)}
+.core-card::before,.core-card::after{content:"";position:absolute;width:22px;height:22px;border:2px solid var(--cyan);opacity:.7}
+.core-card::before{top:8px;left:8px;border-right:0;border-bottom:0}.core-card::after{bottom:8px;right:8px;border-left:0;border-top:0}
+.reactor{width:100%;max-width:210px;--c:var(--mut);overflow:visible}
+.reactor circle{fill:none;stroke:var(--c);transition:stroke .3s}
+.reactor .r3{stroke-width:1.5;stroke-dasharray:3 9;transform-origin:center;animation:spin 40s linear infinite;opacity:.6}
+.reactor .r2{stroke-width:3;stroke-dasharray:90 30 20 30;transform-origin:center;animation:spin 14s linear infinite reverse;opacity:.85}
+.reactor .r1{stroke-width:1.5;stroke-dasharray:6 6;transform-origin:center;animation:spin 22s linear infinite;opacity:.7}
+.reactor .core{fill:var(--c);stroke:none;opacity:.9;filter:drop-shadow(0 0 14px var(--c));transform-origin:center;transform:scale(var(--lv,1));transition:fill .3s,transform .08s}
+.reactor.pulse .core{animation:pulse 1.2s ease-in-out infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pulse{50%{transform:scale(1.16);opacity:.65}}
+.hud-state{font-size:17px;letter-spacing:.3em;text-transform:uppercase;color:var(--c,var(--cyan2));font-weight:650;text-align:center}
+.hud-sub{font-size:12.5px;color:var(--mut);text-align:center;min-height:18px;word-break:break-word}
+.controls{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.boxes{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;width:100%}
+.boxes div{text-align:center;border:1px solid var(--line);border-radius:12px;padding:8px 2px;background:var(--deep)}
+.boxes b{display:block;font-size:17px;color:var(--cyan)}.boxes b.hot{color:var(--warn)}.boxes b.crit{color:var(--err)}
+.boxes small{color:var(--mut);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase}
+/* meters */
+.bar{height:8px;background:rgba(6,12,24,.8);border-radius:8px;overflow:hidden;margin:5px 0 3px}
+.bar>div{height:100%;border-radius:8px;background:linear-gradient(90deg,var(--ok),var(--cyan));transition:width .4s}
+.bar>div.hot{background:var(--warn)}.bar>div.crit{background:var(--err)}
+.meter{margin-bottom:12px}.meter:last-child{margin-bottom:0}
+.meter .top{display:flex;justify-content:space-between;gap:10px}.meter .top span{color:var(--mut);font-variant-numeric:tabular-nums;white-space:nowrap}
+.days{display:grid;grid-template-columns:repeat(14,1fr);gap:5px;align-items:end;height:120px;margin-top:6px}
+.days div{background:linear-gradient(180deg,var(--cyan),rgba(56,217,255,.25));border-radius:5px 5px 2px 2px;min-height:2px;position:relative}
+.days div.today{background:linear-gradient(180deg,#fff,var(--cyan))}
+.days div i{position:absolute;left:0;right:0;top:0;background:var(--violet);border-radius:5px 5px 0 0}
+.daylbl{display:grid;grid-template-columns:repeat(14,1fr);gap:5px;font-size:10px;color:var(--mut);text-align:center;margin-top:4px}
+/* chat feed */
+.feed{height:520px;overflow:auto;display:flex;flex-direction:column;gap:9px;padding-right:4px}
+.msg{max-width:86%;padding:10px 14px;border-radius:18px;white-space:pre-wrap;word-wrap:break-word}
+.msg.user{align-self:flex-end;background:linear-gradient(135deg,var(--cyan),#6fb7ff);color:#04121f;font-weight:500;border-bottom-right-radius:6px}
+.msg.assistant{align-self:flex-start;background:rgba(22,34,58,.9);border:1px solid var(--line);border-bottom-left-radius:6px}
+.msg .meta{display:block;font-size:11px;opacity:.65;margin-bottom:2px}
+.chatbox{display:flex;gap:8px;margin-top:12px}
+.log{overflow:auto;font:12px/1.55 "Cascadia Code",Consolas,monospace;background:rgba(4,9,18,.75);border:1px solid var(--line);border-radius:12px;padding:10px;white-space:pre-wrap;margin:0}
+/* timeline */
+.tl{height:70vh;overflow:auto;font-size:13px}
+.tr{padding:6px 2px;border-bottom:1px solid rgba(130,170,255,.08);word-break:break-word}
+.tr .k{display:inline-block;min-width:66px;text-align:center;font-size:10px;font-weight:700;border-radius:7px;padding:2px 7px;margin-right:8px;background:rgba(56,217,255,.14);color:var(--cyan);text-transform:uppercase}
+.tr.thought .k,.tr.interrupt .k{background:rgba(255,209,102,.14);color:#ffd166}.tr.tool .k{background:rgba(125,255,176,.14);color:#7dffb0}
+.tr.result .k{background:rgba(125,240,255,.14);color:#7df0ff}.tr.reply .k{background:rgba(122,167,255,.2);color:#b9d2ff}
+.tr.lessons .k{background:rgba(255,155,255,.14);color:#ff9bff}.tr.web .k{background:rgba(155,196,255,.14);color:#9bc4ff}
+.tr.escalate .k,.tr.credits .k{background:rgba(181,140,255,.18);color:#d3bcff}
+.tr.error .k,.tr.guard .k{background:rgba(255,93,108,.16);color:#ff9aa4}.tr.error{color:#ffc7cd}
+.tr.sys .k{background:rgba(141,162,196,.14);color:var(--mut)}
+.tr details summary{cursor:pointer;list-style:none}.tr details pre{margin:4px 0 0 82px;color:var(--mut);white-space:pre-wrap;font:11px/1.5 Consolas,monospace}
+.tr time{color:var(--mut);font-size:11.5px;margin-right:8px;font-variant-numeric:tabular-nums}
+/* lists */
+.item{display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-bottom:1px solid rgba(130,170,255,.08);word-break:break-word}
+.item:last-child{border-bottom:0}.item>div{flex:1;min-width:0}.item small{display:block;color:var(--mut);font-size:12px}
+.item .dot{margin-top:7px}
+.lesson{padding:11px 13px;border:1px solid var(--line);border-radius:12px;margin-bottom:9px;background:rgba(6,12,24,.4)}
+.lesson b{color:var(--cyan2)}
+.lesson .note{margin-top:6px;font-size:12px;color:#ffe0a8;border-left:2px solid var(--warn);padding-left:8px}
+.lesson.flagged{border-color:rgba(255,180,84,.4)}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:13px}
+.kv span:nth-child(odd){color:var(--mut)}
+.agent .top{display:flex;align-items:center;gap:9px;margin-bottom:6px}
+.agent .name{font-weight:650}
+.agent .err{color:#ffb3bc;font-size:12px;margin-top:6px;white-space:pre-wrap}
+.agent .act{display:flex;gap:6px;margin-top:12px;flex-wrap:wrap}
+.check .sum{font-size:15px;margin:4px 0 8px;font-weight:550}
+.check .det{font-size:12px;color:var(--mut);word-break:break-word}
+table{width:100%;border-collapse:collapse}
+td,th{padding:10px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+tr:hover td{background:rgba(124,160,255,.04)}
+th{color:var(--mut);font-weight:600;font-size:11.5px;text-transform:uppercase;letter-spacing:.1em}
+td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.scrollx{overflow-x:auto}
+.switch{position:relative;width:44px;height:24px;display:inline-block;flex:none}
+.switch input{display:none}
+.switch span{position:absolute;inset:0;background:#26344f;border-radius:24px;cursor:pointer;transition:.2s}
+.switch span::after{content:"";position:absolute;width:18px;height:18px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 4px rgba(0,0,0,.4)}
+.switch input:checked+span{background:var(--cyan)}
+.switch input:checked+span::after{transform:translateX(20px)}
+.tag{font-size:11px;border-radius:7px;padding:1px 7px;border:1px solid var(--line2);color:var(--mut);white-space:nowrap}
+.tag.d{color:#ffb3bc;border-color:rgba(255,93,108,.45)}.tag.s{color:#d3bcff;border-color:rgba(181,140,255,.45)}
+.tag.g{color:#a9f5cb;border-color:rgba(53,212,154,.45)}
+.stat{font-size:24px;color:var(--txt);font-weight:650}
+.stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
+.stats>div{background:var(--deep);border:1px solid var(--line);border-radius:13px;padding:11px}
+.stats small{color:var(--mut);display:block}
+/* settings */
+.sub{display:flex;gap:2px;padding:4px;border:1px solid var(--line);border-radius:14px;background:rgba(16,26,46,.6);width:fit-content;margin-bottom:16px}
+.savebar{display:flex;gap:8px;align-items:center;margin-bottom:14px;position:sticky;top:62px;z-index:3;background:rgba(7,11,20,.92);padding:10px 0;backdrop-filter:blur(10px)}
+.savebar input{max-width:320px}
+details.group{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);margin-bottom:12px;backdrop-filter:blur(12px)}
+details.group>summary{cursor:pointer;list-style:none;padding:15px 18px;font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--mut);font-weight:650;display:flex;align-items:center;gap:10px}
+details.group>summary::-webkit-details-marker{display:none}
+details.group>summary::before{content:"▸";color:var(--cyan);transition:.15s;letter-spacing:0}
+details.group[open]>summary::before{transform:rotate(90deg)}
+details.group>summary .count{margin-left:auto;text-transform:none;letter-spacing:0;font-weight:400}
+details.group .body{padding:0 18px 14px}
+.gdot{width:8px;height:8px;border-radius:50%;display:none}
+.gdot.changed{display:inline-block;background:var(--warn)}.gdot.bad{display:inline-block;background:var(--err);box-shadow:0 0 8px var(--err)}
+.field{display:grid;grid-template-columns:minmax(200px,340px) 1fr;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+.field .help{grid-column:2;font-size:12px;color:var(--mut);margin-top:-4px}
+.field .badge{font-size:10px;color:var(--mut);border:1px solid var(--line);border-radius:7px;padding:1px 6px;margin-left:6px}
+.field.changed label{color:var(--warn)}
+.field .ferr{grid-column:2;color:var(--err);font-size:12px}
+.field.hide,details.group.hide{display:none}
+a{color:var(--cyan)}
+#chat-link{display:none;color:var(--cyan2);text-decoration:none;border:1px solid var(--line);border-radius:10px;padding:6px 12px;font-size:13px;background:var(--panel)}
+@media(max-width:1000px){.g2,.g2e{grid-template-columns:1fr}.route{grid-template-columns:1fr 1fr}.arrow{display:none}}
+@media(max-width:760px){
+  header{flex-wrap:wrap;gap:10px;padding:10px 12px;position:static}
+  nav{order:3;width:100%;margin-left:0;overflow-x:auto;scrollbar-width:none}nav::-webkit-scrollbar{display:none}
+  main{padding:14px 10px}.g3{grid-template-columns:1fr}.feed{height:50vh}
+  .savebar{top:0}.field{grid-template-columns:1fr}.field .help,.field .ferr{grid-column:1}
+  input,textarea,select,button{font-size:16px}.sub{width:100%;overflow-x:auto}
+}
+@media(prefers-reduced-motion:reduce){.reactor circle{animation:none!important}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M4 11l8-7 8 7v8a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z"/></symbol>
+  <symbol id="i-pulse" viewBox="0 0 24 24"><path d="M3 12h4l3-8 4 16 3-8h4"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3zM5 17a3 3 0 0 1 3-3h11"/></symbol>
+  <symbol id="i-wrench" viewBox="0 0 24 24"><path d="M14.500 6a4 4 0 0 0-5 5L4 16.500 7.500 20l5.500-5.500a4 4 0 0 0 5-5L15.500 12 12 8.500z"/></symbol>
+  <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></symbol>
+  <symbol id="i-right" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+</defs></svg>
+<header>
+  <div class="logo">J.A.R.V.I.S.<small id="hdr-sub">control dashboard</small></div>
+  <nav id="nav">
+    <button data-tab="home" class="active"><svg class="ic"><use href="#i-home"/></svg>Home</button>
+    <button data-tab="activity"><svg class="ic"><use href="#i-pulse"/></svg>Activity</button>
+    <button data-tab="learning"><svg class="ic"><use href="#i-book"/></svg>Learning</button>
+    <button data-tab="shop"><svg class="ic"><use href="#i-wrench"/></svg>Shop &amp; credits</button>
+    <button data-tab="settings"><svg class="ic"><use href="#i-sliders"/></svg>Settings<span class="flag" id="nav-flag"></span></button>
+  </nav>
+  <div class="hdr-right">
+    <a id="chat-link" href="/">Talk &amp; chat</a>
+    <span class="pill" title="AI connection"><span class="dot" id="hdr-api"></span>AI</span>
+    <span class="pill" title="Abacus credits left"><span class="dot" id="hdr-cred"></span><span id="hdr-cred-txt">Credits</span></span>
+    <span class="pill" title="Dashboard connection"><span class="dot" id="hdr-conn"></span><span id="hdr-conn-txt">connecting</span></span>
+  </div>
+</header>
+<main>
+  <div class="banner confirm" id="confirm-banner">
+    <div><b id="confirm-title">Permission needed:</b> <span id="confirm-text"></span><small id="confirm-note"></small></div>
+    <span style="margin-left:auto" class="row">
+      <button class="btn good" id="confirm-yes">Approve</button><button class="btn danger" id="confirm-no">Deny</button>
+    </span>
+  </div>
+  <div class="banner problem" id="problem-banner"></div>
+  <div class="banner restart" id="restart-banner">Some changes need Jarvis to restart.
+    <button class="btn" data-action="restart_friday" style="margin-left:auto">Restart Jarvis now</button></div>
+
+  <!-- HOME -->
+  <section class="tab active" id="tab-home">
+    <div class="card" style="margin-bottom:18px">
+      <h3>Who answers <span class="right"><span class="seg" id="brain-seg">
+        <button data-v="auto" title="Local first, then the cloud when needed">Auto</button><button data-v="teach" title="Abacus does the work; the local AI learns from it and takes over jobs it was tested on">Teach</button><button data-v="local" title="Nothing leaves this PC">Local only</button><button data-v="online" title="Claude answers, asking you each time">Online</button></span></span></h3>
+      <div class="route" id="route"></div>
+      <div class="routefoot"><div class="meter" id="route-allow"></div><div class="muted small" id="route-note"></div></div>
+    </div>
+    <div class="grid g2">
+      <div class="grid" style="align-content:start">
+        <div class="card core-card">
+          <svg viewBox="0 0 200 200" class="reactor" id="reactor" aria-hidden="true">
+            <circle class="r3" cx="100" cy="100" r="94"/><circle class="r2" cx="100" cy="100" r="80"/>
+            <circle class="r1" cx="100" cy="100" r="64"/><circle class="core" cx="100" cy="100" r="38"/>
+          </svg>
+          <div class="hud-state" id="hud-state">—</div>
+          <div class="hud-sub" id="hud-sub"></div>
+          <div class="bar" style="width:100%" title="microphone level"><div id="meter" style="width:0;transition:width .08s"></div></div>
+          <div class="controls">
+            <button class="btn" id="btn-mic">Mute mic</button>
+            <button class="btn" id="btn-voice">Mute voice</button>
+            <button class="btn" data-action="stop_speaking">Stop speaking</button>
+            <button class="btn" id="btn-conv">Conversation mode</button>
+          </div>
+          <div class="row" style="width:100%">
+            <span class="muted" style="white-space:nowrap">Listening</span>
+            <select id="mode-select">
+              <option value="always">Always listening (wake word + follow-up)</option>
+              <option value="wake">Wake word every time</option>
+              <option value="ptt">Push-to-talk</option>
+              <option value="text">Text only</option>
+            </select>
+          </div>
+          <div class="boxes" id="pc-boxes"></div>
+        </div>
+        <div class="card"><h3>Coming up</h3><div id="coming"></div></div>
+        <div class="card"><h3>Projects <span class="right muted small" id="proj-note"></span></h3>
+          <div id="projects"></div>
+          <form id="proj-form" style="display:flex;flex-direction:column;gap:8px;margin-top:12px">
+            <input id="proj-title" placeholder="Project name (e.g. Fork seal prices)">
+            <textarea id="proj-request" rows="2" placeholder="What should he do? (e.g. Find the three best prices for fork seals for a 2019 Ski-Doo Renegade and save them in my notes.)"></textarea>
+            <label class="row small muted"><input type="checkbox" id="proj-screen" style="width:auto"> may use the screen, keyboard and browser (it then has the screen alone)</label>
+            <button class="btn good" type="submit" style="align-self:flex-start">Start project</button>
+          </form>
+        </div>
+        <div class="card"><h3>Updates Jarvis sent you <span class="right muted small" id="upd-note"></span></h3><div id="updates"></div></div>
+        <div class="card"><h3>Today</h3><div class="stats" id="usage-stats"></div></div>
+      </div>
+      <div class="card">
+        <h3>Live conversation</h3>
+        <div class="feed" id="feed"></div>
+        <form class="chatbox" id="chat-form">
+          <input id="chat-input" placeholder="Type to Jarvis (replies are also spoken)..." autocomplete="off">
+          <button class="btn on" type="submit">Send</button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- ACTIVITY -->
+  <section class="tab" id="tab-activity">
+    <div class="grid g2" style="grid-template-columns:minmax(320px,2fr) minmax(280px,1fr)">
+      <div class="card">
+        <h3>Everything it does, as it happens <span class="right row">
+          <input id="tl-search" placeholder="Search…" style="width:170px;padding:5px 10px">
+          <button class="btn sm" id="tl-clear">Clear view</button></span></h3>
+        <div class="seg" id="tl-filter" style="margin-bottom:10px">
+          <button data-f="all" class="on">All</button><button data-f="talk">Conversation</button><button data-f="tools">Tools</button>
+          <button data-f="cloud">Cloud brains</button><button data-f="errors">Problems</button><button data-f="sys">System</button>
+        </div>
+        <div class="tl" id="timeline"></div>
+      </div>
+      <div class="card"><h3>Done on its own</h3>
+        <div class="muted small" style="margin-bottom:6px">Tools run, credits spent, texts, nightly work. Kept on disk, so it survives a restart.</div>
+        <div id="own" style="max-height:70vh;overflow:auto"></div></div>
+    </div>
+  </section>
+
+  <!-- LEARNING -->
+  <section class="tab" id="tab-learning">
+    <div class="grid g2e">
+      <div class="grid" style="align-content:start">
+        <div class="card"><h3>Teach it a rule</h3>
+          <div class="muted" style="margin-bottom:8px">Rules are followed in every answer. You can also say <b>teach: &lt;rule&gt;</b> in chat or by voice.</div>
+          <form id="lesson-form" style="display:flex;flex-direction:column;gap:8px">
+            <input id="lesson-title" placeholder="Short name (e.g. Check manuals first)">
+            <textarea id="lesson-how" rows="3" placeholder="What to do (e.g. For any part number or torque spec, search the manuals before answering and quote the page.)"></textarea>
+            <input id="lesson-when" placeholder="Only when the message mentions... (optional, comma separated, blank = always)">
+            <button class="btn good" type="submit" style="align-self:flex-start">Teach it</button>
+          </form>
+        </div>
+        <div class="card"><h3>Rules it follows <span class="right muted small" id="lesson-count"></span></h3><div id="lessons"></div></div>
+      </div>
+      <div class="grid" style="align-content:start">
+        <div class="card"><h3>Learned from the online AI <span class="right"><button class="btn good sm" id="distill-btn">Review everything now</button></span></h3>
+          <div class="muted small" id="record-line"></div>
+          <div class="muted" style="margin:6px 0 10px">Every night the online AI studies everything Jarvis did (each tool, key press and command) and writes playbooks. Each one is tested on the local AI first, and only the ones that help are switched on. In Teach mode the local AI takes over a job only when a proven playbook covers it. Friday sets no credit cap on this review: set the limit on Abacus.</div>
+          <div id="playbooks"></div>
+          <pre id="distill-report" class="log" style="max-height:210px;margin-top:10px">Loading…</pre></div>
+        <div class="card"><h3>Nightly learning <span class="right"><button class="btn good sm" id="evolve-btn">Learn from today now</button></span></h3>
+          <div class="muted" style="margin-bottom:6px">At 02:00 (or when you press the button, or say "evolve") it studies what went badly in the last 24 hours and writes itself new rules. Free: it never uses credits.</div>
+          <pre id="evolve-report" class="log" style="height:170px">Loading…</pre></div>
+        <div class="card"><h3>Skills it has learned</h3><div id="skills"></div></div>
+        <div class="card"><h3>Facts it remembers</h3>
+          <div id="facts"></div>
+          <form class="chatbox" id="fact-form"><input id="fact-input" placeholder="Add a fact (e.g. My shop opens at 9am)"><button class="btn">Add</button></form>
+        </div>
+        <div class="card"><h3>Notes</h3><pre id="notes" class="log" style="max-height:180px"></pre></div>
+        <div class="card"><h3>Conversation it keeps in mind <span class="right"><button class="btn danger sm" id="clear-history">Clear</button></span></h3>
+          <div class="feed" id="history" style="height:340px"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SHOP & CREDITS -->
+  <section class="tab" id="tab-shop">
+    <div class="grid g2e">
+      <div class="grid" style="align-content:start">
+        <div class="card"><h3>Open jobs</h3><div class="scrollx"><table><thead><tr><th>#</th><th>Customer</th><th>Vehicle</th><th>Work</th><th>Status</th><th>Due</th></tr></thead><tbody id="jobs"></tbody></table></div></div>
+        <div class="card"><h3>Parts to chase</h3><div id="parts"></div></div>
+        <div class="card"><h3>Jarvis itself</h3><div class="kv" id="v2-status"></div></div>
+        <div class="card"><h3>Last nightly report</h3><pre id="v2-nightly" class="log" style="max-height:220px"></pre></div>
+      </div>
+      <div class="grid" style="align-content:start">
+        <div class="card"><h3>Credits</h3><div id="credit-meters"></div></div>
+        <div class="card"><h3>Credits spent, last 14 days</h3><div class="days" id="days"></div><div class="daylbl" id="daylbl"></div></div>
+        <div class="card"><h3>Recent credit requests, by brain</h3><div id="by-brain"></div></div>
+        <div class="card"><h3>Credit requests</h3><div class="scrollx"><table><thead><tr><th>When</th><th>Task</th><th>Brain</th><th>Estimate</th><th>Answer</th><th>Used</th></tr></thead><tbody id="ledger"></tbody></table></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section class="tab" id="tab-settings">
+    <div class="sub" id="sub">
+      <button data-pane="fields" class="active">Settings</button>
+      <button data-pane="tools">Tools</button>
+      <button data-pane="health">Health<span class="flag" id="health-flag"></span></button>
+    </div>
+    <div class="pane active" id="pane-fields">
+      <div class="savebar">
+        <input id="set-search" placeholder="Search settings…">
+        <button class="btn good" id="save-settings">Save changes</button>
+        <button class="btn" id="reset-settings">Discard</button>
+        <span class="muted" id="settings-msg"></span>
+      </div>
+      <div id="settings"></div>
+    </div>
+    <div class="pane" id="pane-tools">
+      <div class="card"><h3>What Jarvis can do <span class="right"><input id="tool-search" placeholder="Search tools…" style="width:220px;padding:5px 10px"></span></h3>
+        <p class="muted" style="margin-top:0">Switch a tool off to stop the AI from using it. Tools marked <span class="tag d">asks permission</span> always need your OK.</p>
+        <div class="scrollx"><table><thead><tr><th>On</th><th>Tool</th><th>What it does</th><th>Calls</th><th>Last used</th></tr></thead><tbody id="tools"></tbody></table></div>
+      </div>
+    </div>
+    <div class="pane" id="pane-health">
+      <div class="row" style="margin-bottom:14px"><button class="btn" id="run-checks">Run all checks</button><span class="muted" id="checks-time"></span></div>
+      <div class="grid g3" id="checks"></div>
+      <h3 class="muted" style="font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;margin:22px 0 12px">The parts of Jarvis</h3>
+      <div class="grid g3" id="agents"></div>
+    </div>
+  </section>
+</main>
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+const $ = s => document.querySelector(s);
+const STATE_COLORS = {listening:"var(--ok)",conversation:"#00e6a0",thinking:"var(--warn)",speaking:"var(--cyan)",
+  tool:"var(--tool)",error:"var(--err)",sleeping:"#4f7fa8",idle:"var(--mut)",muted:"#a03040",starting:"var(--mut)"};
+const STATE_NAMES = {sleeping:"Standing by",conversation:"Listening",listening:"Listening",thinking:"Thinking",
+  speaking:"Speaking",tool:"Working",error:"Error",idle:"Idle",muted:"Mic muted",starting:"Starting"};
+let S = null, settingsFields = [], dirty = {}, HUD = {}, LIMITS = {rows: [], credits: {}};
+
+function el(tag, attrs = {}, ...kids) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === "class") e.className = v; else if (k === "text") e.textContent = v;
+    else if (k.startsWith("on")) e.addEventListener(k.slice(2), v); else if (v !== undefined && v !== null) e.setAttribute(k, v);
+  }
+  for (const k of kids) if (k !== null && k !== undefined) e.append(k.nodeType ? k : document.createTextNode(String(k)));
+  return e;
+}
+function toast(msg) { const t = $("#toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove("show"), 3500); }
+async function api(path, body) {
+  const opt = body === undefined ? {} : {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body)};
+  const r = await fetch(path, {credentials: "same-origin", ...opt});
+  if (r.status === 401) { location.reload(); throw new Error("unauthorized"); }
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) throw Object.assign(new Error(data.error || r.statusText), {data});
+  return data;
+}
+const fmtTime = iso => iso ? new Date(iso).toLocaleTimeString() : "—";
+const fmtNum = n => (n ?? 0).toLocaleString();
+function ago(iso) { if (!iso) return "never"; const s = (Date.now() - new Date(iso)) / 1000;
+  return s < 60 ? `${Math.round(s)}s ago` : s < 3600 ? `${Math.round(s / 60)}m ago` : s < 86400 ? `${Math.round(s / 3600)}h ago` : `${Math.round(s / 86400)}d ago`; }
+function meter(name, used, cap, note) {
+  const pct = cap ? Math.min(100, 100 * used / cap) : 0;
+  return el("div", {class: "meter"},
+    el("div", {class: "top"}, el("b", {text: name}), el("span", {text: cap ? `${fmtNum(used)} / ${fmtNum(cap)}` : "–"})),
+    el("div", {class: "bar"}, el("div", {class: pct >= 90 ? "crit" : pct >= 75 ? "hot" : "", style: `width:${pct}%`})),
+    note ? el("div", {class: "muted small", text: note}) : null);
+}
+function fill(sel, nodes, empty) { const b = $(sel); b.textContent = ""; if (nodes.length) b.append(...nodes); else b.append(el("div", {class: "muted", text: empty})); }
+
+// on the phone (Tailscale address) offer a link back to the voice/chat page on the normal https port
+if (/\.ts\.net$/.test(location.hostname)) { const a = $("#chat-link"); a.href = location.protocol + "//" + location.hostname + "/"; a.style.display = "inline-block"; }
+
+// ---------------------------------------------------------------- tabs
+const LOADERS = {activity: () => loadOwn(), learning: () => { loadLessons(); loadMemory(); loadSkills(); loadPlaybooks(); }, shop: () => loadShop(),
+  settings: () => { if (!Object.keys(dirty).length) loadSettings(); loadTools(); }};
+function showTab(t) {
+  if (!$("#tab-" + t)) t = "home";
+  document.querySelectorAll("#nav button").forEach(x => x.classList.toggle("active", x.dataset.tab === t));
+  document.querySelectorAll(".tab").forEach(x => x.classList.toggle("active", x.id === "tab-" + t));
+  try { localStorage.setItem("jarvis_tab", t); } catch (e) {}
+  if (LOADERS[t]) Promise.resolve().then(LOADERS[t]).catch(e => toast(e.message));
+}
+document.querySelectorAll("#nav button").forEach(b => b.onclick = () => showTab(b.dataset.tab));
+document.querySelectorAll("#sub button").forEach(b => b.onclick = () => {
+  document.querySelectorAll("#sub button").forEach(x => x.classList.toggle("active", x === b));
+  document.querySelectorAll(".pane").forEach(p => p.classList.toggle("active", p.id === "pane-" + b.dataset.pane));
+});
+document.addEventListener("click", async e => {
+  const a = e.target.closest("[data-action]"); if (!a) return;
+  if (a.dataset.action === "restart_friday" && !confirm("Restart Jarvis now?")) return;
+  try { const r = await api("/api/control", {action: a.dataset.action}); toast(r.message); }
+  catch (err) { toast("Failed: " + err.message); }
+  if (a.dataset.action === "restart_friday") setTimeout(waitForRestart, 2500);
+});
+function waitForRestart() { fetch("/api/health").then(r => r.ok ? location.reload() : setTimeout(waitForRestart, 1500)).catch(() => setTimeout(waitForRestart, 1500)); }
+
+// ---------------------------------------------------------------- home: state
+function renderStatus() {
+  const st = S.status.state, c = STATE_COLORS[st] || "var(--mut)";
+  const f = S.flags, A = S.assistant;
+  $("#btn-mic").textContent = f.mic_muted ? "Unmute mic" : "Mute mic"; $("#btn-mic").classList.toggle("on", !!f.mic_muted);
+  const vm = f.voice_muted || A.voice_muted;
+  $("#btn-voice").textContent = vm ? "Unmute voice" : "Mute voice"; $("#btn-voice").classList.toggle("on", !!vm);
+  $("#btn-conv").classList.toggle("on", !!A.conversation_mode);
+  $("#btn-conv").textContent = A.conversation_mode ? "Conversation mode: ON" : "Conversation mode: off";
+  $("#mode-select").value = A.mode;
+  $("#hdr-sub").textContent = `${A.name} v${A.version} · ${A.provider} / ${A.model}`;
+  const pb = $("#problem-banner"); pb.classList.toggle("show", A.problems.length > 0);
+  pb.textContent = A.problems.length ? "Setup needed: " + A.problems.join(" ") + " Open Settings to fix it." : "";
+  const rc = $("#reactor"); rc.style.setProperty("--c", c); rc.classList.toggle("pulse", ["thinking", "speaking", "tool"].includes(st));
+  $("#hud-state").textContent = STATE_NAMES[st] || st; $("#hud-state").style.setProperty("--c", c);
+  $("#hud-sub").textContent = S.status.detail || "";
+}
+function renderConfirm(p) {
+  $("#confirm-banner").classList.toggle("show", !!p);
+  if (!p) return;
+  const claude = /claude/i.test(p.prompt);   // saying no to Claude is not a dead end: Jarvis falls back to Abacus
+  $("#confirm-title").textContent = claude ? "Jarvis wants to use Claude:" : "Permission needed:";
+  $("#confirm-text").textContent = p.prompt; $("#confirm-banner").dataset.id = p.id;
+  $("#confirm-yes").textContent = claude ? "Use Claude" : "Approve";
+  $("#confirm-no").textContent = claude ? "Use Abacus instead" : "Deny";
+  $("#confirm-note").textContent = claude ? "If you say no, Abacus answers (or the local AI when Abacus has hit today's limit)." : "";
+}
+function addMsg(container, m) {
+  const d = el("div", {class: "msg " + m.role},
+    el("span", {class: "meta", text: (m.role === "user" ? "You" : (S?.assistant.name || "Jarvis")) + (m.via ? " · " + m.via : "") + (m.time ? " · " + fmtTime(m.time) : "")}),
+    m.text ?? m.content);
+  container.append(d); container.scrollTop = container.scrollHeight;
+}
+function renderUsage() {
+  const u = S.usage, items = [["Requests", fmtNum(u.today.requests)], ["Tokens", fmtNum(u.today.input_tokens + u.today.output_tokens)],
+    ["Errors", fmtNum(u.today.errors)], ["Last reply took", u.session.last_latency_ms != null ? (u.session.last_latency_ms / 1000).toFixed(1) + " s" : "—"],
+    ["Tokens this month", fmtNum(u.month.input_tokens + u.month.output_tokens)]];
+  const cr = (S.checks || []).find(c => c.id === "credits");
+  if (cr && cr.details.credits_left != null) items.unshift(["Abacus credits left", fmtNum(Math.round(cr.details.credits_left))]);
+  $("#usage-stats").replaceChildren(...items.map(([k, v]) => el("div", {}, el("small", {text: k}), el("div", {class: "stat", text: v}))));
+}
+function renderComing() {
+  const rows = [];
+  if (HUD.next_event) rows.push(el("div", {class: "item"}, el("div", {}, HUD.next_event, el("small", {text: "next on your calendar"}))));
+  for (const t of S ? S.timers : []) rows.push(el("div", {class: "item"},
+    el("div", {}, t.message, el("small", {text: new Date(t.due).toLocaleString()})),
+    el("button", {class: "btn danger sm", text: "Cancel", onclick: async () => { await api("/api/timers/cancel", {id: t.id}); refreshState(); }})));
+  fill("#coming", rows, "Nothing on the calendar and no timers running.");
+}
+
+// ---------------------------------------------------------------- home: who answers
+function renderRoute() {
+  const rows = LIMITS.rows || [], find = re => rows.find(r => re.test(r.name));
+  const free = find(/^free/i), abacus = find(/abacus/i);
+  const claudeRows = rows.filter(r => /^claude/i.test(r.name) && !/month/i.test(r.name) && r.cap);
+  const claude = claudeRows.length ? {used: claudeRows.reduce((a, r) => a + r.used, 0), cap: claudeRows.reduce((a, r) => a + r.cap, 0)} : null;
+  const route = String(HUD.route || "main").toLowerCase();
+  const live = /claude/.test(route) ? "claude" : route.startsWith("backup") ? "abacus" : /free/.test(route) ? "free" : "local";
+  const node = (id, title, sub, lim, offNote) => {
+    const pct = lim && lim.cap ? Math.min(100, 100 * lim.used / lim.cap) : 0;
+    return el("div", {class: "node" + (live === id ? " live" : "") + (lim === null ? " off" : "")},
+      el("b", {text: title}), el("span", {text: lim === null ? offNote : sub}),
+      el("span", {text: lim === undefined ? "no limit, no cost" : lim === null ? " " : lim.cap ? `${lim.used} of ${lim.cap} today` : `${lim.used} today · no limit`}),
+      el("div", {class: "bar"}, el("div", {class: pct >= 90 ? "crit" : pct >= 75 ? "hot" : "", style: `width:${lim === undefined ? 0 : pct}%`})));
+  };
+  const arrow = () => el("div", {class: "arrow", html: ""}, (() => { const s = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    s.setAttribute("class", "ic"); const u = document.createElementNS("http://www.w3.org/2000/svg", "use"); u.setAttribute("href", "#i-right"); s.append(u); return s; })());
+  $("#route").replaceChildren(
+    node("local", "Local AI", HUD.model || "on this PC", undefined), arrow(),
+    node("free", "Free cloud", "general questions", free || null, "not set up"), arrow(),
+    node("abacus", "Abacus", "reasoning and memory", abacus || null, "not set up"), arrow(),
+    node("claude", "Claude", "last, always asks you", claude, "no API key"));
+  const c = LIMITS.credits || {};
+  $("#route-allow").replaceChildren(...(c.abacus_total == null ? [] : [el("div", {class: "muted", text:
+    `Abacus: ${fmtNum(c.abacus_today)} credits today, ${fmtNum(c.abacus_total)} in total. No limit in Friday; I warn you every ${fmtNum(c.abacus_warn_every)}.`})]));
+  $("#route-note").textContent = c.daily_cap == null ? "" : `Claude and other capped AIs: ${fmtNum(c.spent_today)} of ${fmtNum(c.daily_cap)} credits today · ${fmtNum(c.spent_month)} of ${fmtNum(c.monthly_cap)} this month`;
+  document.querySelectorAll("#brain-seg button").forEach(b => b.classList.toggle("on", b.dataset.v === HUD.brain_mode));
+  const box = (v, l) => el("div", {}, el("b", {class: v >= 90 ? "crit" : v >= 75 ? "hot" : "", text: v == null ? "–" : v + "%"}), el("small", {text: l}));
+  $("#pc-boxes").replaceChildren(box(HUD.cpu, "CPU"), box(HUD.ram, "Memory"), box(HUD.gpu, "GPU"), box(HUD.vram, "VRAM"));
+}
+const PROJ_LIVE = ["queued", "running", "waiting for the screen"], PROJ_TAG = {running: "g", done: "g", failed: "d", interrupted: "d"};
+async function loadProjects() {
+  if (document.hidden) return;
+  try {
+    const r = await api("/api/projects"), live = r.projects.filter(p => PROJ_LIVE.includes(p.status)).length;
+    $("#proj-note").textContent = (live ? `${live} active · ` : "") + `up to ${r.max} at once`;
+    fill("#projects", r.projects.slice(0, 8).map(p => el("div", {class: "lesson"},
+      el("div", {class: "row"}, el("b", {text: `#${p.id} ${p.title}`}), el("span", {class: "tag " + (PROJ_TAG[p.status] || ""), text: p.status}),
+        p.needs_screen ? el("span", {class: "tag s", text: "screen"}) : null,
+        PROJ_LIVE.includes(p.status) ? el("button", {class: "btn danger sm", style: "margin-left:auto", text: "Cancel", onclick: async () => {
+          try { toast((await api("/api/projects", {cancel: p.id})).message); loadProjects(); } catch (e) { toast(e.message); } }}) : null),
+      PROJ_LIVE.includes(p.status) ? el("div", {class: "muted small", text: `${p.seconds}s · ${p.progress}`})
+        : el("details", {}, el("summary", {class: "muted small", text: `${p.seconds}s · show the report`}),
+            el("pre", {class: "log", style: "margin-top:6px", text: p.result || p.error || "(nothing)"})))),
+      "No projects yet. Say \"in the background, ...\" to Jarvis, or start one below.");
+  } catch (e) { /* decoration */ }
+}
+$("#proj-form").onsubmit = async e => {
+  e.preventDefault();
+  try {
+    await api("/api/projects", {title: $("#proj-title").value, request: $("#proj-request").value, needs_screen: $("#proj-screen").checked});
+    ["#proj-title", "#proj-request"].forEach(s => $(s).value = ""); toast("Project started."); loadProjects();
+  } catch (err) { toast(err.message); }
+};
+async function loadUpdates() {
+  if (document.hidden) return;
+  try {
+    const r = await api("/api/updates");
+    $("#upd-note").textContent = r.quiet_now ? "quiet hours: nothing is spoken now" : "";
+    fill("#updates", r.updates.slice(0, 6).map(u => el("div", {class: "item"}, el("span", {class: "tag" + (u.kind === "health" ? " d" : u.kind === "credits" ? " s" : ""), text: u.kind}),
+      el("div", {}, u.text, el("small", {text: (u.time || "").slice(5, 16).replace("T", " ")})))), "Nothing yet. He tells you about problems, credit use and what he learned.");
+  } catch (e) { /* decoration */ }
+}
+async function refreshHud() {
+  if (document.hidden) return;
+  try { [HUD, LIMITS] = await Promise.all([api("/api/hud"), api("/api/limits")]); renderRoute(); renderComing(); }
+  catch (e) { /* decoration: never break the page */ }
+}
+document.querySelectorAll("#brain-seg button").forEach(b => b.onclick = async () => {
+  try { const r = await api("/api/control", {action: "brain:" + b.dataset.v}); toast(r.message); refreshHud(); } catch (e) { toast("Failed: " + e.message); }
+});
+
+// ---------------------------------------------------------------- activity timeline
+const FILTERS = {all: () => true, talk: e => ["heard", "reply", "interrupt"].includes(e.kind),
+  tools: e => ["tool", "result", "web"].includes(e.kind), cloud: e => ["escalate", "credits"].includes(e.kind),
+  errors: e => e.kind === "error" || e.kind === "guard", sys: e => e.src === "log"};
+let TL = [], tlFilter = "all";
+function tlRow(e) {
+  const row = el("div", {class: "tr " + (e.src === "log" && e.kind !== "error" ? "sys" : e.kind)});
+  const head = [el("time", {text: fmtTime(e.time)}), el("span", {class: "k", text: e.label || e.kind}), e.text];
+  if (e.detail) row.append(el("details", {}, el("summary", {}, ...head), el("pre", {text: e.detail})));
+  else row.append(...head);
+  return row;
+}
+function tlMatch(e) { const q = $("#tl-search").value.trim().toLowerCase(); return FILTERS[tlFilter](e) && (!q || (e.text + " " + (e.detail || "") + " " + e.kind).toLowerCase().includes(q)); }
+function tlRender() { const box = $("#timeline"); box.replaceChildren(...TL.filter(tlMatch).map(tlRow)); box.scrollTop = box.scrollHeight;
+  if (!box.children.length) box.append(el("div", {class: "muted", text: "Nothing here yet."})); }
+function tlAdd(e, live) {
+  TL.push(e); if (TL.length > 800) TL.shift();
+  if (!live || !tlMatch(e)) return;
+  const box = $("#timeline"), stick = box.scrollTop + box.clientHeight >= box.scrollHeight - 40;
+  if (box.firstChild && box.firstChild.classList.contains("muted")) box.textContent = "";
+  box.append(tlRow(e)); while (box.children.length > 800) box.firstChild.remove();
+  if (stick) box.scrollTop = box.scrollHeight;
+}
+const fromTrace = t => ({src: "trace", time: t.time, kind: t.kind, text: t.text, detail: t.detail});
+const fromLog = l => ({src: "log", time: l.time, kind: l.level === "error" ? "error" : "sys", label: l.source, text: l.message});
+document.querySelectorAll("#tl-filter button").forEach(b => b.onclick = () => {
+  tlFilter = b.dataset.f; document.querySelectorAll("#tl-filter button").forEach(x => x.classList.toggle("on", x === b)); tlRender(); });
+$("#tl-search").oninput = tlRender;
+$("#tl-clear").onclick = () => { TL = []; tlRender(); };
+async function loadOwn() {
+  const v = await api("/api/v2");
+  fill("#own", v.activity.map(r => el("div", {class: "item"}, el("span", {class: "tag" + (r.kind === "error" ? " d" : r.kind === "credits" ? " s" : ""), text: r.kind}),
+    el("div", {}, r.message || r.msg || "", el("small", {text: (r.time || "").slice(5, 16).replace("T", " ")})))), "Nothing yet.");
+}
+
+// ---------------------------------------------------------------- learning
+const wordsOf = s => new Set((s.toLowerCase().match(/[a-z]{4,}/g) || []));
+function lessonNotes(list) {   // honest hints only: a likely repeat, or a rule that asks for something a rule can't change
+  const notes = {}, sets = list.map(l => wordsOf((l.title || "") + " " + l.how));
+  list.forEach((l, i) => {
+    for (let j = 0; j < i; j++) {
+      const a = sets[i], b = sets[j], both = [...a].filter(w => b.has(w)).length, all = new Set([...a, ...b]).size;
+      if (all && both / all >= 0.5) { notes[l.id] = `Says nearly the same as #${list[j].id}. One of the two is enough.`; break; }
+    }
+    if (/\b(no|without|never|skip|stop|don'?t|do not)\b.{0,40}\b(permission|approval|confirm|asking)/i.test(l.how))
+      notes[l.id] = (notes[l.id] ? notes[l.id] + " " : "") + "Permissions are fixed in Jarvis's safety code, so a rule can't remove them. Change the autonomy level in Settings instead.";
+  });
+  return notes;
+}
+function renderLessons(list) {
+  const notes = lessonNotes(list), flagged = Object.keys(notes).length;
+  $("#lesson-count").textContent = list.length ? `${list.length} rule${list.length === 1 ? "" : "s"}${flagged ? ` · ${flagged} worth a look` : ""}` : "";
+  fill("#lessons", list.map(l => el("div", {class: "lesson" + (notes[l.id] ? " flagged" : "")},
+    el("div", {class: "row"}, el("b", {text: `#${l.id} ${l.title}`}),
+      l.source === "evolve" ? el("span", {class: "tag s", text: "learned by itself"}) : el("span", {class: "tag g", text: "taught by you"}),
+      l.paused ? el("span", {class: "tag d", text: "paused: " + (l.paused_why || "not helping")}) : null,
+      l.paused ? el("button", {class: "btn sm", text: "Resume", onclick: async () => {
+        try { renderLessons((await api("/api/lessons", {resume: String(l.id)})).lessons); } catch (e) { toast(e.message); } }}) : null,
+      el("button", {class: "btn danger sm", style: "margin-left:auto", text: "Forget", onclick: async () => {
+        try { renderLessons((await api("/api/lessons", {delete: String(l.id)})).lessons); } catch (e) { toast(e.message); } }})),
+    el("div", {text: l.how}),
+    l.when ? el("div", {class: "muted small", text: "only when: " + l.when}) : null,
+    notes[l.id] ? el("div", {class: "note", text: notes[l.id]}) : null)), "Nothing taught yet.");
+}
+async function loadLessons() { renderLessons((await api("/api/lessons")).lessons); loadEvolve().catch(() => {}); }
+async function loadEvolve() {
+  const r = await api("/api/evolve");
+  $("#evolve-report").textContent = (r.running ? "Studying the last 24 hours… (this takes up to a minute)\n\n" : "") + (r.report || "No learning session has run yet.");
+  $("#evolve-btn").disabled = !!r.running;
+  return r.running;
+}
+$("#evolve-btn").onclick = async () => {
+  try {
+    await api("/api/evolve", {}); toast("Studying the last 24 hours…");
+    const poll = async () => { const running = await loadEvolve(); if (running) setTimeout(poll, 3000); else loadLessons(); };
+    setTimeout(poll, 1500);
+  } catch (e) { toast("Failed: " + e.message); }
+};
+$("#lesson-form").addEventListener("submit", async ev => {
+  ev.preventDefault();
+  const how = $("#lesson-how").value.trim(); if (!how) return toast("Write what it should do first.");
+  try {
+    const r = await api("/api/lessons", {title: $("#lesson-title").value, how, when: $("#lesson-when").value});
+    ["#lesson-title", "#lesson-how", "#lesson-when"].forEach(s => $(s).value = "");
+    renderLessons(r.lessons); toast("Learned. It will follow that from now on.");
+  } catch (e) { toast("Failed: " + e.message); }
+});
+const PB_STATUS = {proven: ["g", "proven: local AI takes this over"], redundant: ["", "already does it right"], no_help: ["d", "did not help"],
+  unproven: ["d", "could not be tested"], unchecked: ["", "waiting to be tested"], failing: ["d", "failing in real use: switched off"]};
+function renderPlaybooks(list) {
+  fill("#playbooks", list.slice().reverse().map(p => {
+    const ev = p.eval || {}, st = PB_STATUS[p.status] || ["", p.status], cb = el("input", {type: "checkbox"}); cb.checked = !!p.enabled;
+    cb.onchange = async () => { try { await api("/api/playbooks", {id: p.id, enabled: cb.checked}); } catch (e) { cb.checked = !cb.checked; toast(e.message); } };
+    return el("div", {class: "lesson"},
+      el("div", {class: "row"}, el("label", {class: "switch", title: "Show this playbook to the local AI"}, cb, el("span")), el("b", {text: `#${p.id} ${p.title}`}),
+        el("span", {class: "tag " + st[0], text: st[1]}),
+        el("button", {class: "btn danger sm", style: "margin-left:auto", text: "Forget", onclick: async () => {
+          try { renderPlaybooks((await api("/api/playbooks", {delete: String(p.id)})).playbooks); } catch (e) { toast(e.message); } }})),
+      el("div", {class: "muted small", text: p.steps.map(s => s.tool).join("  →  ")}),
+      ev.steps ? el("div", {class: "muted small", text: `Tested on ${ev.steps} recorded step(s): the local AI alone got ${ev.alone}, with this playbook ${ev.with}.` + (p.retested ? ` Last re-tested ${p.retested}.` : "")}) : null,
+      p.live && p.live.uses ? el("div", {class: "muted small", text: `In real use: ${p.live.good} of ${p.live.uses} jobs went well.` + (p.live.good < p.live.uses && p.live.last_bad ? ` Last problem: ${p.live.last_bad}` : "")}) : null,
+      p.watch_out ? el("div", {class: "note", text: p.watch_out}) : null);
+  }), "No playbooks yet. The first full review writes them (tonight, or press the button).");
+}
+async function loadPlaybooks() {
+  const r = await api("/api/playbooks"), s = r.record;
+  $("#record-line").textContent = `Last 24 hours on record: ${s.requests} requests, ${s.actions} actions, ${s.online} done by the online AI, ${s.problems} with problems.`;
+  $("#distill-report").textContent = (r.running ? "Studying everything… (this takes a few minutes)\n\n" : "") + r.report;
+  $("#distill-btn").disabled = !!r.running;
+  renderPlaybooks(r.playbooks);
+  return r.running;
+}
+$("#distill-btn").onclick = async () => {
+  try {
+    await api("/api/distill", {}); toast("Studying everything Jarvis did…");
+    const poll = async () => { const running = await loadPlaybooks(); if (running) setTimeout(poll, 4000); };
+    setTimeout(poll, 1500);
+  } catch (e) { toast("Failed: " + e.message); }
+};
+async function loadSkills() {
+  const {tools} = await api("/api/tools"), groups = {};
+  for (const t of tools) if (String(t.source || "").startsWith("skill:")) (groups[t.source.slice(6)] ||= []).push(t);
+  fill("#skills", Object.entries(groups).map(([name, ts]) => el("div", {class: "item"}, el("div", {}, el("b", {text: name}),
+    el("small", {text: ts.map(t => t.name).join(", ") + ` · used ${ts.reduce((a, t) => a + (t.calls || 0), 0)} times`})))),
+    "No learned skills yet. Ask Jarvis to learn something (for example \"learn how to check my tire stock\") and it appears here.");
+}
+async function loadMemory() {
+  const [m, n] = await Promise.all([api("/api/memory"), api("/api/notes").catch(() => ({notes: ""}))]);
+  fill("#facts", m.facts.map(f => el("div", {class: "item"}, el("div", {text: f}),
+    el("button", {class: "btn danger sm", text: "Forget", onclick: async () => { await api("/api/memory/fact", {fact: f, delete: true}); loadMemory(); }}))), "No facts stored yet.");
+  const h = $("#history"); h.textContent = "";
+  if (!m.messages.length) h.append(el("div", {class: "muted", text: "History is empty."}));
+  for (const msg of m.messages) addMsg(h, msg);
+  $("#notes").textContent = n.notes || "No notes yet.";
+}
+$("#fact-form").onsubmit = async e => { e.preventDefault(); const v = $("#fact-input").value.trim(); if (!v) return;
+  await api("/api/memory/fact", {fact: v}); $("#fact-input").value = ""; loadMemory(); };
+$("#clear-history").onclick = async () => { if (!confirm("Clear the conversation history? (Facts are kept.)")) return;
+  await api("/api/memory/clear", {}); loadMemory(); };
+
+// ---------------------------------------------------------------- shop & credits
+const brainName = p => /anthropic|claude/i.test(p) ? "Claude" : /abacus/i.test(p) ? "Abacus" : p || "cloud";
+async function loadShop() {
+  const [v, lim] = await Promise.all([api("/api/v2"), api("/api/limits")]);
+  LIMITS = lim; const c = lim.credits || {}, led = v.credits.ledger || [];
+  $("#jobs").replaceChildren(...(v.jobs.length ? v.jobs.map(j => el("tr", {}, el("td", {text: j.id}), el("td", {text: j.customer || ""}), el("td", {text: j.vehicle || ""}),
+    el("td", {text: j.work || ""}), el("td", {}, el("span", {class: "tag", text: j.status})), el("td", {class: "muted", text: j.due || ""})))
+    : [el("tr", {}, el("td", {colspan: 6, class: "muted", text: "No open jobs."}))]));
+  fill("#parts", v.parts.map(p => el("div", {class: "item"}, el("div", {}, p.part, el("small", {text: (p.remind_on ? "remind on " + p.remind_on : "no reminder") + (p.job_id ? ` · job #${p.job_id}` : "")})))), "No parts waiting.");
+  fill("#credit-meters", c.daily_cap == null ? [] : [
+    el("div", {class: "muted", style: "margin-bottom:12px", text: `Abacus: ${fmtNum(c.abacus_today)} credits today, ${fmtNum(c.abacus_total)} in total. No limit in Friday (set one on abacus.ai); I warn you every ${fmtNum(c.abacus_warn_every)}.`}),
+    meter("Claude and other capped AIs, today", c.spent_today, c.daily_cap, "Claude always asks you first"),
+    meter("Claude and other capped AIs, this month", c.spent_month, c.monthly_cap), ...(lim.rows || []).map(r => meter(r.name, r.used, r.cap, r.note)),
+    ...(c.review_today ? [el("div", {class: "muted small", text: `Full review today: ${c.review_today} credits. Not counted against the caps above: set its limit on Abacus.`})] : [])], "Credit numbers aren't available.");
+  const days = c.days || [], top = Math.max(1, ...days.map(d => d.spent + (d.abacus || 0) + (d.review || 0)));
+  $("#days").replaceChildren(...days.map((d, i) => { const tot = d.spent + (d.abacus || 0) + (d.review || 0);
+    return el("div", {class: i === days.length - 1 ? "today" : "", style: `height:${Math.max(2, 100 * tot / top)}%`, title: `${d.date}: ${d.spent} credits, plus ${d.review || 0} for the full review`},
+      d.review ? el("i", {style: `height:${100 * d.review / tot}%`}) : null); }));
+  $("#daylbl").replaceChildren(...days.map(d => el("span", {text: (d.spent + (d.abacus || 0) + (d.review || 0)) ? Math.round(d.spent + (d.abacus || 0) + (d.review || 0)) : "·", title: d.date})));
+  const by = {};
+  for (const e of led) { const b = (by[brainName(e.provider)] ||= {asked: 0, yes: 0, used: 0}); b.asked++; if (e.approved) { b.yes++; b.used += e.actual || 0; } }
+  const most = Math.max(1, ...Object.values(by).map(b => b.used));
+  fill("#by-brain", Object.entries(by).map(([n, b]) => el("div", {class: "meter"},
+    el("div", {class: "top"}, el("b", {text: n}), el("span", {text: `${b.used.toFixed(1)} credits · ${b.yes} of ${b.asked} approved`})),
+    el("div", {class: "bar"}, el("div", {style: `width:${100 * b.used / most}%`})))), "No credit requests yet.");
+  $("#ledger").replaceChildren(...(led.length ? led.slice().reverse().map(e => el("tr", {}, el("td", {class: "muted", text: (e.time || "").slice(5, 16).replace("T", " ")}),
+    el("td", {text: e.task}), el("td", {text: brainName(e.provider)}), el("td", {class: "num", text: `${e.estimate[0]}–${e.estimate[1]}`}),
+    el("td", {}, el("span", {class: "tag " + (e.approved ? "g" : "d"), text: e.approved ? (/allowance/i.test(e.how || "") ? "allowance" : "approved") : "declined"})),
+    el("td", {class: "num", text: e.approved ? (e.actual || 0) : "–"})))
+    : [el("tr", {}, el("td", {colspan: 6, class: "muted", text: "No credit requests yet."}))]));
+  const kv = [["Text messages", v.sms.configured ? "set up" + (v.sms.last_error ? " (last error: " + v.sms.last_error + ")" : "") : "not set up"],
+    ["Autonomy", v.autonomy.text], ["Manuals", `${v.knowledge.documents} (${v.knowledge.semantic} with smart search)`],
+    ["Manuals folder", v.knowledge.folder], ["Backups", v.backups.length ? v.backups.slice(0, 4).join(", ") : "none yet"]];
+  $("#v2-status").replaceChildren(...kv.flatMap(([k, val]) => [el("span", {text: k}), el("span", {text: val})]));
+  $("#v2-nightly").textContent = v.nightly_report || "No nightly run yet.";
+}
+
+// ---------------------------------------------------------------- settings: health
+const AGENT_ACTIONS = {voice_input: [["Restart mic", "restart_audio"]], stt: [["Reload", "restart_audio"]],
+  brain: [["Reconnect", "restart_brain"]], tts: [["Stop speaking", "stop_speaking"]], listener: [["Mute / unmute mic", "toggle_mic"]]};
+function renderAgents() {
+  $("#agents").replaceChildren(...S.agents.map(a => {
+    const card = el("div", {class: "card agent"},
+      el("div", {class: "top"}, el("span", {class: "dot " + a.health}), el("span", {class: "name", text: a.name}),
+        el("span", {class: "muted " + a.health, style: "margin-left:auto;font-size:12px", text: a.health.toUpperCase()})),
+      el("div", {class: "muted", text: a.detail || ""}),
+      el("div", {class: "muted small", style: "margin-top:4px", text: "Last activity: " + ago(a.last_activity)}),
+      a.error ? el("div", {class: "err", text: a.error}) : null);
+    const acts = AGENT_ACTIONS[a.id];
+    if (acts) card.append(el("div", {class: "act"}, ...acts.map(([l, act]) => el("button", {class: "btn sm", "data-action": act, text: l}))));
+    return card;
+  }));
+  flagHealth();
+}
+function flagHealth() {
+  const bad = (S.checks || []).some(c => c.status === "error") || S.agents.some(a => a.health === "error");
+  $("#health-flag").classList.toggle("show", bad); $("#nav-flag").classList.toggle("show", bad || S.assistant.problems.length > 0);
+}
+function renderChecks() {
+  const box = $("#checks"), list = S.checks || []; box.textContent = "";
+  if (!list.length) box.append(el("div", {class: "muted", text: "No checks yet. Click Run all checks."}));
+  let newest = "";
+  for (const c of list) {
+    if (c.checked_at > newest) newest = c.checked_at;
+    const det = el("div", {class: "det"});
+    for (const [k, v] of Object.entries(c.details || {})) {
+      if (k === "packages") { det.append(el("div", {text: "packages: " + Object.entries(v).map(([p, ver]) => p + " " + ver).join(", ")})); continue; }
+      if (typeof v === "string" && v.startsWith("http")) { det.append(el("div", {}, k.replace(/_/g, " ") + ": ", el("a", {href: v, target: "_blank", rel: "noopener", text: v}))); continue; }
+      det.append(el("div", {text: `${k.replace(/_/g, " ")}: ${Array.isArray(v) ? v.join(", ") || "none" : typeof v === "number" ? v.toLocaleString() : v}`}));
+    }
+    const card = el("div", {class: "card check"},
+      el("div", {class: "row"}, el("span", {class: "dot " + c.status}), el("b", {text: c.name}),
+        el("button", {class: "btn sm", style: "margin-left:auto", text: "Re-check", onclick: () => runChecks(c.id)})),
+      el("div", {class: "sum " + c.status, text: c.summary}));
+    if (c.id === "credits" && c.details.percent_left != null) {
+      const p = c.details.percent_left;
+      card.append(el("div", {class: "bar"}, el("div", {class: p > 25 ? "" : p > 5 ? "hot" : "crit", style: `width:${p}%`})));
+    }
+    card.append(det, el("div", {class: "muted", style: "font-size:11px;margin-top:6px",
+      text: `checked ${fmtTime(c.checked_at)}${c.latency_ms != null ? " · " + c.latency_ms + " ms" : ""}`}));
+    box.append(card);
+  }
+  $("#checks-time").textContent = newest ? "Last run " + fmtTime(newest) : "";
+  const api_ = list.find(c => c.id === "api"), cr = list.find(c => c.id === "credits");
+  $("#hdr-api").className = "dot " + (api_ ? api_.status : "");
+  $("#hdr-cred").className = "dot " + (cr ? cr.status : "");
+  $("#hdr-cred-txt").textContent = cr && cr.details.credits_left != null ? fmtNum(Math.round(cr.details.credits_left)) + " credits" : "Credits";
+  flagHealth();
+}
+async function runChecks(id) {
+  $("#run-checks").disabled = true; toast(id ? "Re-checking " + id + "..." : "Running all checks...");
+  try { const r = await api("/api/checks/run", id ? {id} : {}); mergeChecks(r.results); }
+  catch (e) { toast("Checks failed: " + e.message); }
+  $("#run-checks").disabled = false;
+}
+function mergeChecks(results) {
+  const map = Object.fromEntries((S.checks || []).map(c => [c.id, c]));
+  for (const r of results) map[r.id] = r;
+  S.checks = Object.values(map); renderChecks(); renderUsage();
+}
+$("#run-checks").onclick = () => runChecks();
+
+// ---------------------------------------------------------------- settings: fields
+async function loadSettings() {
+  const [s, mics] = await Promise.all([api("/api/settings"), api("/api/mics").catch(() => ({devices: []}))]);
+  settingsFields = s.fields; dirty = {}; renderSettings(mics); $("#settings-msg").textContent = ""; filterSettings();
+}
+function renderSettings(mics) {
+  const box = $("#settings"), open = new Set([...box.querySelectorAll("details[open]")].map(d => d.dataset.g)); box.textContent = "";
+  const groups = {};
+  for (const f of settingsFields) (groups[f.group] ||= []).push(f);
+  Object.entries(groups).forEach(([g, fields], i) => {
+    const body = el("div", {class: "body"});
+    for (const f of fields) body.append(renderField(f, mics));
+    if (g === "Microphone & speech") body.append(el("div", {class: "row", style: "margin-top:10px"},
+      el("button", {class: "btn", type: "button", text: "Calibrate microphone (stay quiet)", onclick: calibrate}), el("span", {class: "muted", id: "calib-msg"})));
+    if (g === "Voice") body.append(el("div", {class: "row", style: "margin-top:10px"},
+      el("button", {class: "btn", type: "button", text: "Test voice", onclick: () => api("/api/test-voice", {voice: valueOf("EDGE_VOICE"), engine: valueOf("TTS_ENGINE")}).then(() => toast("Playing a test sentence on the PC speakers"))})));
+    const d = el("details", {class: "group", "data-g": g}, el("summary", {}, g, el("span", {class: "gdot"}), el("span", {class: "count muted", text: fields.length + " settings"})), body);
+    if (open.size ? open.has(g) : i === 0) d.open = true;
+    box.append(d);
+  });
+}
+function markGroups() {
+  document.querySelectorAll("details.group").forEach(d => {
+    const dot = d.querySelector(".gdot");
+    dot.className = "gdot" + (d.querySelector(".ferr") ? " bad" : d.querySelector(".field.changed") ? " changed" : "");
+  });
+}
+function filterSettings() {
+  const q = $("#set-search").value.trim().toLowerCase();
+  document.querySelectorAll("details.group").forEach(d => {
+    let any = false;
+    d.querySelectorAll(".field").forEach(f => { const hit = !q || f.dataset.find.includes(q); f.classList.toggle("hide", !hit); any = any || hit; });
+    d.classList.toggle("hide", !any); if (q && any) d.open = true;
+  });
+}
+$("#set-search").oninput = filterSettings;
+function valueOf(key) { return key in dirty ? dirty[key] : (settingsFields.find(f => f.key === key) || {}).value; }
+function renderField(f, mics) {
+  const wrap = el("div", {class: "field", id: "f-" + f.key, "data-find": `${f.label} ${f.key} ${f.help || ""} ${f.group}`.toLowerCase()});
+  const label = el("label", {text: f.label}, f.apply === "restart" ? el("span", {class: "badge", text: "restart"}) : null);
+  let input;
+  const mark = v => { if (String(v) === String(f.value) && f.type !== "secret") delete dirty[f.key]; else dirty[f.key] = v;
+    wrap.classList.toggle("changed", f.key in dirty); const n = Object.keys(dirty).length;
+    $("#settings-msg").textContent = n ? n + " unsaved change" + (n === 1 ? "" : "s") : ""; markGroups(); };
+  if (f.type === "bool") {
+    const cb = el("input", {type: "checkbox"}); cb.checked = String(f.value).toLowerCase() === "true";
+    cb.onchange = () => mark(cb.checked ? "true" : "false");
+    input = el("label", {class: "switch"}, cb, el("span"));
+  } else if (f.type === "select" || f.type === "mic") {
+    input = el("select");
+    let opts = f.type === "mic" ? [["", "Windows default microphone"], ...(mics.devices || []).map(d => [String(d.index), `[${d.index}] ${d.name}${d.default ? " (default)" : ""}`])]
+                                : f.options.map(o => [o, o]);
+    if (f.value && !opts.some(o => o[0] === String(f.value))) opts.push([f.value, f.value + " (current)"]);
+    for (const [v, t] of opts) input.append(el("option", {value: v, text: t}));
+    input.value = f.value ?? ""; input.onchange = () => mark(input.value);
+  } else if (f.type === "secret") {
+    input = el("div", {class: "row"});
+    const inp = el("input", {type: "password", placeholder: f.has_value ? `saved (${f.value}) - type to replace` : "not set - paste your key", autocomplete: "off"});
+    const show = el("button", {class: "btn", type: "button", text: "Show", onclick: () => { inp.type = inp.type === "password" ? "text" : "password"; show.textContent = inp.type === "password" ? "Show" : "Hide"; }});
+    inp.oninput = () => { if (inp.value.trim()) mark(inp.value.trim()); else { delete dirty[f.key]; wrap.classList.remove("changed"); markGroups(); } };
+    input.append(inp, show);
+  } else {
+    input = el("input", {type: f.type === "number" ? "number" : "text", value: f.value ?? ""});
+    if (f.type === "number") { if (f.min != null) input.min = f.min; if (f.max != null) input.max = f.max; input.step = f.step || "any"; }
+    input.oninput = () => mark(input.value);
+  }
+  wrap.append(label, input);
+  if (f.help) wrap.append(el("div", {class: "help", text: f.help}));
+  return wrap;
+}
+async function calibrate() {
+  $("#calib-msg").textContent = "Listening to room noise...";
+  try { const r = await api("/api/calibrate", {});
+    $("#calib-msg").textContent = r.ok ? `Noise ${r.ambient} → suggested threshold ${r.suggested_threshold} (0 = automatic)` : r.error; }
+  catch (e) { $("#calib-msg").textContent = e.message; }
+}
+$("#save-settings").onclick = async () => {
+  if (!Object.keys(dirty).length) { toast("Nothing to save"); return; }
+  document.querySelectorAll(".ferr").forEach(e => e.remove());
+  try {
+    const r = await api("/api/settings", {updates: dirty});
+    toast(`Saved ${r.changed.length} setting(s).` + (r.notes && r.notes.length ? " " + r.notes.join(" ") : ""));
+    if (r.restart_needed) $("#restart-banner").classList.add("show");
+    await loadSettings(); refreshState();
+  } catch (e) {
+    const fields = e.data && e.data.fields;
+    if (fields) for (const [k, msg] of Object.entries(fields)) { const w = $("#f-" + k); if (w) { w.append(el("div", {class: "ferr", text: msg})); w.closest("details").open = true; } }
+    markGroups(); toast("Not saved: " + e.message);
+  }
+};
+$("#reset-settings").onclick = () => loadSettings();
+
+// ---------------------------------------------------------------- settings: tools
+let TOOLS = [];
+async function loadTools() { TOOLS = (await api("/api/tools")).tools; renderTools(); }
+function renderTools() {
+  const q = $("#tool-search").value.trim().toLowerCase();
+  $("#tools").replaceChildren(...TOOLS.filter(t => !q || (t.name + " " + t.description).toLowerCase().includes(q)).map(t => {
+    const cb = el("input", {type: "checkbox"}); cb.checked = t.enabled;
+    cb.onchange = async () => { try { await api("/api/tools", {name: t.name, enabled: cb.checked}); t.enabled = cb.checked; toast(`${t.name} ${cb.checked ? "on" : "off"}`); } catch (e) { cb.checked = !cb.checked; toast(e.message); } };
+    return el("tr", {},
+      el("td", {}, el("label", {class: "switch"}, cb, el("span"))),
+      el("td", {}, el("b", {text: t.name}), el("div", {class: "row", style: "margin-top:3px;flex-wrap:wrap"},
+        t.dangerous ? el("span", {class: "tag d", text: "asks permission"}) : null,
+        String(t.source || "").startsWith("skill:") ? el("span", {class: "tag s", text: "learned"}) : null)),
+      el("td", {class: "muted", text: t.description}),
+      el("td", {class: "num", text: `${t.calls || 0}${t.errors ? " (" + t.errors + " failed)" : ""}`}),
+      el("td", {class: "muted", text: t.last_used ? ago(t.last_used) : "never", title: t.last_result || ""}));
+  }));
+}
+$("#tool-search").oninput = renderTools;
+
+// ---------------------------------------------------------------- controls
+$("#btn-mic").onclick = () => api("/api/control", {action: S.flags.mic_muted ? "unmute_mic" : "mute_mic"}).then(r => toast(r.message));
+$("#btn-voice").onclick = () => api("/api/control", {action: (S.flags.voice_muted || S.assistant.voice_muted) ? "unmute_voice" : "mute_voice"}).then(r => { toast(r.message); refreshState(); });
+$("#btn-conv").onclick = () => api("/api/control", {action: S.assistant.conversation_mode ? "conversation_off" : "conversation_on"}).then(r => { toast(r.message); refreshState(); });
+$("#mode-select").onchange = e => api("/api/control", {action: "mode:" + e.target.value}).then(r => { toast(r.message); refreshState(); });
+$("#chat-form").onsubmit = async e => { e.preventDefault(); const v = $("#chat-input").value.trim(); if (!v) return;
+  $("#chat-input").value = ""; try { await api("/api/chat", {text: v}); } catch (err) { toast(err.message); } };
+$("#confirm-yes").onclick = () => api("/api/confirm", {id: $("#confirm-banner").dataset.id, approve: true}).catch(() => {});
+$("#confirm-no").onclick = () => api("/api/confirm", {id: $("#confirm-banner").dataset.id, approve: false}).catch(() => {});
+
+// ---------------------------------------------------------------- data flow
+async function refreshState() {
+  S = await api("/api/state");
+  renderStatus(); renderAgents(); renderChecks(); renderUsage(); renderConfirm(S.pending_confirm); renderComing();
+}
+async function init() {
+  await refreshState();
+  const feed = $("#feed"); feed.textContent = "";
+  S.feed.forEach(m => addMsg(feed, m));
+  TL = [...(S.trace || []).map(fromTrace), ...S.log.map(fromLog)].sort((a, b) => String(a.time).localeCompare(String(b.time)));
+  tlRender();
+  let t = "home"; try { t = localStorage.getItem("jarvis_tab") || "home"; } catch (e) {}
+  showTab(t);
+  connect();
+  refreshHud(); setInterval(refreshHud, 5000);
+  loadUpdates(); setInterval(loadUpdates, 30000);
+  loadProjects(); setInterval(loadProjects, 5000);
+  setInterval(() => refreshState().catch(() => {}), 15000);
+}
+function connect() {
+  const es = new EventSource("/api/events");
+  es.onopen = () => { $("#hdr-conn").className = "dot ok"; $("#hdr-conn-txt").textContent = "live"; };
+  es.onerror = () => { $("#hdr-conn").className = "dot error"; $("#hdr-conn-txt").textContent = "offline"; };
+  es.onmessage = ev => {
+    const e = JSON.parse(ev.data);
+    switch (e.type) {
+      case "status": S.status = e; renderStatus(); break;
+      case "flags": S.flags = {...S.flags, ...e}; renderStatus(); break;
+      case "level": $("#meter").style.width = Math.min(100, Math.sqrt(e.rms / 0.12) * 100) + "%";
+        $("#reactor").style.setProperty("--lv", String(1 + Math.min(.35, e.rms * 4))); break;
+      case "chat": addMsg($("#feed"), e); break;
+      case "trace": tlAdd(fromTrace(e), true); if (e.kind === "reply" || e.kind === "escalate") setTimeout(refreshHud, 400); break;
+      case "log": tlAdd(fromLog(e), true); break;
+      case "agent": { const i = S.agents.findIndex(a => a.id === e.id); if (i >= 0) S.agents[i] = e; else S.agents.push(e); renderAgents(); break; }
+      case "checks": S.checks = e.results; renderChecks(); renderUsage(); break;
+      case "confirm": renderConfirm(e.pending); break;
+    }
+  };
+}
+init().catch(e => toast("Dashboard failed to load: " + e.message));
+</script>
+</body>
+</html>
